@@ -4,4 +4,3 @@ deepface
 opencv-python
 numpy
 python-multipart
-tensorflow
