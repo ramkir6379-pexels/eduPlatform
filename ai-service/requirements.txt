@@ -4,3 +4,4 @@ deepface==0.0.92
 opencv-python
 numpy
 python-multipart
+tf-keras
