@@ -16,7 +16,7 @@ import { initializeDatabase } from "./init-db";
 import { migrateDatabase } from "./migrate-db";
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // Configure multer for file uploads
 const upload = multer({ storage: multer.memoryStorage() });
