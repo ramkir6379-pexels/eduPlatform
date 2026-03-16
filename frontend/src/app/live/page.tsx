@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
@@ -17,7 +18,7 @@ interface Participant {
   name?: string;
 }
 
-export default function LiveClass() {
+function LiveClassContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const classId = searchParams.get("classId") || "class-1";
@@ -432,5 +433,13 @@ function RemoteVideoStream({
         {role === "teacher" ? "👨‍🏫 Teacher" : "👨‍🎓 Student"}
       </div>
     </div>
+  );
+}
+
+export default function LiveClass() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen bg-gray-900"><div className="text-white">Loading...</div></div>}>
+      <LiveClassContent />
+    </Suspense>
   );
 }
