@@ -19,6 +19,10 @@ export const receiveFrame = async (req: Request, res: Response) => {
       });
     }
 
+    console.log("student_id:", student_id);
+    console.log("class_id:", class_id);
+    console.log("session_id:", session_id);
+
     const formData = new FormData();
     formData.append("frame", req.file.buffer, {
       filename: "frame.jpg",

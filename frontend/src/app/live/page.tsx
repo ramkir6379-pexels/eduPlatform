@@ -231,6 +231,15 @@ function LiveClassContent() {
 
   const captureFrame = (videoElement: HTMLVideoElement) => {
     if (!videoElement) return;
+    
+    const studentId = localStorage.getItem("userId");
+    if (!studentId) {
+      console.error("No student ID found in localStorage");
+      return;
+    }
+
+    console.log("Student ID:", studentId);
+
     const canvas = document.createElement("canvas");
     canvas.width = videoElement.videoWidth;
     canvas.height = videoElement.videoHeight;
@@ -242,7 +251,7 @@ function LiveClassContent() {
       const formData = new FormData();
       formData.append("frame", blob);
       formData.append("class_id", classId);
-      formData.append("student_id", localStorage.getItem("userId") || "0");
+      formData.append("student_id", studentId);
       formData.append("session_id", sessionIdRef.current);
       fetch(`${API_URL}/api/engagement/frame`, {
         method: "POST",
