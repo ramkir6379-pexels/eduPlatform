@@ -17,7 +17,7 @@ export const receiveFrame = async (req: Request, res: Response) => {
     });
 
     const response = await axios.post(
-      "http://localhost:8000/analyze",
+      "https://eduplatform-1.onrender.com/analyze",
       formData,
       {
         headers: formData.getHeaders(),
