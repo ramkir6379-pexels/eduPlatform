@@ -6,6 +6,7 @@ import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { API_URL } from "@/config";
 
 interface Question {
   id: number;
@@ -48,11 +49,11 @@ export default function QuizDetailPage() {
 
   const fetchQuizData = async () => {
     try {
-      const quizRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes/${quizId}`);
+      const quizRes = await fetch(`${API_URL}/api/quizzes/${quizId}`);
       const quizData = await quizRes.json();
       setQuiz(quizData);
 
-      const questionsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes/questions/${quizId}`);
+      const questionsRes = await fetch(`${API_URL}/api/quizzes/questions/${quizId}`);
       const questionsData = await questionsRes.json();
       setQuestions(questionsData);
     } catch (error) {
@@ -72,7 +73,7 @@ export default function QuizDetailPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes/question`, {
+      const res = await fetch(`${API_URL}/api/quizzes/question`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
+import { API_URL } from "@/config";
 import StatCard from "@/components/dashboard/StatCard";
 import ChartCard from "@/components/dashboard/ChartCard";
 import { Users, BookOpen, BarChart3, ClipboardCheck, Plus } from "lucide-react";
@@ -59,7 +60,7 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/stats`);
+      const res = await fetch(`${API_URL}/api/admin/stats`);
       const data = await res.json();
       setStats(data);
     } catch (error) {

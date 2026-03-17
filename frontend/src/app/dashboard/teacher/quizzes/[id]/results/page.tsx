@@ -6,6 +6,7 @@ import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
 import { ArrowLeft, BarChart3 } from "lucide-react";
 import Link from "next/link";
+import { API_URL } from "@/config";
 
 interface QuizResult {
   student_name: string;
@@ -30,12 +31,12 @@ export default function QuizResultsPage() {
   const fetchResults = async () => {
     try {
       // Fetch quiz title
-      const quizRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes/${quizId}`);
+      const quizRes = await fetch(`${API_URL}/api/quizzes/${quizId}`);
       const quizData = await quizRes.json();
       setQuizTitle(quizData.title);
 
       // Fetch results
-      const resultsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes/results/${quizId}`);
+      const resultsRes = await fetch(`${API_URL}/api/quizzes/results/${quizId}`);
       const resultsData = await resultsRes.json();
       setResults(resultsData);
     } catch (error) {

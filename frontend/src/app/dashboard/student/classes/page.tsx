@@ -5,6 +5,7 @@ import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
 import ClassListCard from "@/components/classes/ClassListCard";
 import { Plus } from "lucide-react";
+import { API_URL } from "@/config";
 
 interface Class {
   id: number;
@@ -25,7 +26,7 @@ export default function StudentClassesPage() {
 
   const fetchEnrolledClasses = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/student/3`);
+      const res = await fetch(`${API_URL}/api/classes/student/3`);
       const data = await res.json();
       setEnrolledClasses(data);
     } catch (error) {
@@ -41,7 +42,7 @@ export default function StudentClassesPage() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/join`, {
+      const res = await fetch(`${API_URL}/api/classes/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

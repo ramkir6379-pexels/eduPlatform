@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { API_URL } from "@/config";
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/1`)
+    fetch(`${API_URL}/api/notifications/1`)
       .then((res) => res.json())
       .then((data) => setNotifications(data));
   }, []);

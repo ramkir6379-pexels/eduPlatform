@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
 import { Trash2, Eye } from "lucide-react";
+import { API_URL } from "@/config";
 
 interface Class {
   id: number;
@@ -24,7 +25,7 @@ export default function AdminClassesPage() {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes`);
+      const res = await fetch(`${API_URL}/api/classes`);
       const data = await res.json();
       setClasses(data);
     } catch (error) {
@@ -38,7 +39,7 @@ export default function AdminClassesPage() {
     if (!confirm("Are you sure you want to delete this class?")) return;
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/${classId}`, {
+      const res = await fetch(`${API_URL}/api/classes/${classId}`, {
         method: "DELETE",
       });
 

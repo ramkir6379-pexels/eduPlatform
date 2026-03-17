@@ -6,6 +6,7 @@ import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
 import { ArrowLeft, Play, ClipboardCheck, BookOpen } from "lucide-react";
 import Link from "next/link";
+import { API_URL } from "@/config";
 
 interface Student {
   id: number;
@@ -33,12 +34,12 @@ export default function ClassDetailPage() {
 
   const fetchClassData = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/${classId}`);
+      const res = await fetch(`${API_URL}/api/classes/${classId}`);
       const data = await res.json();
       setClassData(data);
 
       // Fetch students in this class
-      const studentsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/${classId}/students`);
+      const studentsRes = await fetch(`${API_URL}/api/classes/${classId}/students`);
       const studentsData = await studentsRes.json();
       setStudents(studentsData);
     } catch (error) {

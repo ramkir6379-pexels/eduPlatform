@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
 import { Video } from "lucide-react";
+import { API_URL } from "@/config";
 
 interface Class {
   id: number;
@@ -20,7 +21,7 @@ export default function TeacherLiveClassPage() {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/teacher/2`);
+      const res = await fetch(`${API_URL}/api/classes/teacher/2`);
       const data = await res.json();
       setClasses(data);
     } catch (error) {

@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import Peer from "simple-peer";
 import { Phone, Mic, MicOff, Video, VideoOff, X } from "lucide-react";
+import { API_URL, SOCKET_URL } from "@/config";
 
 interface RemoteUser {
   id: string;
@@ -66,7 +67,7 @@ function LiveClassContent() {
 
         // Initialize socket
         console.log("Connecting to socket...");
-        socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000");
+        socketRef.current = io(SOCKET_URL);
 
         socketRef.current.on("connect", () => {
           console.log("Socket connected:", socketRef.current?.id);
@@ -230,7 +231,7 @@ function LiveClassContent() {
       if (!blob) return;
       const formData = new FormData();
       formData.append("frame", blob);
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/engagement/frame`, {
+      fetch(`${API_URL}/api/engagement/frame`, {
         method: "POST",
         body: formData,
       });

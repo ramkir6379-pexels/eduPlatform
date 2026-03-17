@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { API_URL } from "@/config";
 
 export default function QuizPage() {
   const [quizzes, setQuizzes] = useState([]);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes`)
+    fetch(`${API_URL}/api/quizzes`)
       .then((res) => res.json())
       .then((data) => setQuizzes(data));
   }, []);

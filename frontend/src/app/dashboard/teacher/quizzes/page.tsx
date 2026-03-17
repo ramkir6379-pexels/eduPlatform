@@ -5,6 +5,7 @@ import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
 import { Plus, Trash2, Eye } from "lucide-react";
 import Link from "next/link";
+import { API_URL } from "@/config";
 
 interface Quiz {
   id: number;
@@ -25,7 +26,7 @@ export default function TeacherQuizzesPage() {
 
   const fetchQuizzes = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes/teacher/2`);
+      const res = await fetch(`${API_URL}/api/quizzes/teacher/2`);
       const data = await res.json();
       setQuizzes(data);
     } catch (error) {
@@ -39,7 +40,7 @@ export default function TeacherQuizzesPage() {
     if (!confirm("Are you sure you want to delete this quiz?")) return;
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes/${quizId}`, {
+      const res = await fetch(`${API_URL}/api/quizzes/${quizId}`, {
         method: "DELETE",
       });
 

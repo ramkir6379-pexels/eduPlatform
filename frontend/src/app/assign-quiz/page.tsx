@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { API_URL } from "@/config";
 
 export default function AssignQuiz() {
   const [quizzes, setQuizzes] = useState([]);
@@ -10,17 +11,17 @@ export default function AssignQuiz() {
   const [classId, setClassId] = useState("");
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes`)
+    fetch(`${API_URL}/api/quizzes`)
       .then((res) => res.json())
       .then((data) => setQuizzes(data));
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes`)
+    fetch(`${API_URL}/api/classes`)
       .then((res) => res.json())
       .then((data) => setClasses(data));
   }, []);
 
   function assignQuiz() {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes/assign`, {
+    fetch(`${API_URL}/api/quizzes/assign`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

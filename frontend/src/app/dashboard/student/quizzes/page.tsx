@@ -5,6 +5,7 @@ import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
+import { API_URL } from "@/config";
 
 interface Quiz {
   id: number;
@@ -25,13 +26,13 @@ export default function StudentQuizzesPage() {
   const fetchQuizzes = async () => {
     try {
       // Get student's enrolled classes first
-      const classesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/student/3`);
+      const classesRes = await fetch(`${API_URL}/api/classes/student/3`);
       const classes = await classesRes.json();
 
       // Fetch quizzes for each class
       const allQuizzes: Quiz[] = [];
       for (const cls of classes) {
-        const quizzesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes/class/${cls.id}`);
+        const quizzesRes = await fetch(`${API_URL}/api/quizzes/class/${cls.id}`);
         const classQuizzes = await quizzesRes.json();
         allQuizzes.push(...classQuizzes);
       }

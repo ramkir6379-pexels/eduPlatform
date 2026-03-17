@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
+import { API_URL } from "@/config";
 
 interface AttendanceRecord {
   id: number;
@@ -22,7 +23,7 @@ export default function StudentAttendancePage() {
 
   const fetchAttendance = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/attendance/student/3`);
+      const res = await fetch(`${API_URL}/api/attendance/student/3`);
       const data = await res.json();
       setAttendance(data);
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
 import { Check, X, Download } from "lucide-react";
+import { API_URL } from "@/config";
 
 interface Student {
   id: number;
@@ -29,7 +30,7 @@ export default function TeacherAttendancePage() {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/teacher/2`);
+      const res = await fetch(`${API_URL}/api/classes/teacher/2`);
       const data = await res.json();
       setClasses(data);
     } catch (error) {
@@ -43,7 +44,7 @@ export default function TeacherAttendancePage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/${classId}/students`);
+      const res = await fetch(`${API_URL}/api/classes/${classId}/students`);
       const data = await res.json();
       setStudents(data);
 
@@ -77,7 +78,7 @@ export default function TeacherAttendancePage() {
         status: attendance[student.id] || "present",
       }));
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/attendance`, {
+      const res = await fetch(`${API_URL}/api/attendance`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -107,7 +108,7 @@ export default function TeacherAttendancePage() {
     if (!selectedClass) return;
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/attendance/export/${selectedClass}`);
+      const res = await fetch(`${API_URL}/api/attendance/export/${selectedClass}`);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
