@@ -20,7 +20,7 @@ export default function TeacherLiveClassPage() {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/classes/teacher/2");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/teacher/2`);
       const data = await res.json();
       setClasses(data);
     } catch (error) {

@@ -30,12 +30,12 @@ export default function QuizResultsPage() {
   const fetchResults = async () => {
     try {
       // Fetch quiz title
-      const quizRes = await fetch(`http://localhost:5000/api/quizzes/${quizId}`);
+      const quizRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes/${quizId}`);
       const quizData = await quizRes.json();
       setQuizTitle(quizData.title);
 
       // Fetch results
-      const resultsRes = await fetch(`http://localhost:5000/api/quizzes/results/${quizId}`);
+      const resultsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes/results/${quizId}`);
       const resultsData = await resultsRes.json();
       setResults(resultsData);
     } catch (error) {

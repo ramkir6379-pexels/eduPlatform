@@ -24,7 +24,7 @@ export default function AdminClassesPage() {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/classes");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes`);
       const data = await res.json();
       setClasses(data);
     } catch (error) {
@@ -38,7 +38,7 @@ export default function AdminClassesPage() {
     if (!confirm("Are you sure you want to delete this class?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/classes/${classId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/${classId}`, {
         method: "DELETE",
       });
 

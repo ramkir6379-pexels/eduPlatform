@@ -25,13 +25,13 @@ export default function StudentQuizzesPage() {
   const fetchQuizzes = async () => {
     try {
       // Get student's enrolled classes first
-      const classesRes = await fetch("http://localhost:5000/api/classes/student/3");
+      const classesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/student/3`);
       const classes = await classesRes.json();
 
       // Fetch quizzes for each class
       const allQuizzes: Quiz[] = [];
       for (const cls of classes) {
-        const quizzesRes = await fetch(`http://localhost:5000/api/quizzes/class/${cls.id}`);
+        const quizzesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes/class/${cls.id}`);
         const classQuizzes = await quizzesRes.json();
         allQuizzes.push(...classQuizzes);
       }

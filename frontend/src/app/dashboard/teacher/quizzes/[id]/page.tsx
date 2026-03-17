@@ -48,11 +48,11 @@ export default function QuizDetailPage() {
 
   const fetchQuizData = async () => {
     try {
-      const quizRes = await fetch(`http://localhost:5000/api/quizzes/${quizId}`);
+      const quizRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes/${quizId}`);
       const quizData = await quizRes.json();
       setQuiz(quizData);
 
-      const questionsRes = await fetch(`http://localhost:5000/api/quizzes/questions/${quizId}`);
+      const questionsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes/questions/${quizId}`);
       const questionsData = await questionsRes.json();
       setQuestions(questionsData);
     } catch (error) {
@@ -72,7 +72,7 @@ export default function QuizDetailPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("http://localhost:5000/api/quizzes/question", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes/question`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

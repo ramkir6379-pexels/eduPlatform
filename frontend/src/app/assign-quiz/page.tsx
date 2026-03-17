@@ -10,17 +10,17 @@ export default function AssignQuiz() {
   const [classId, setClassId] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/quizzes")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes`)
       .then((res) => res.json())
       .then((data) => setQuizzes(data));
 
-    fetch("http://localhost:5000/api/classes")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes`)
       .then((res) => res.json())
       .then((data) => setClasses(data));
   }, []);
 
   function assignQuiz() {
-    fetch("http://localhost:5000/api/quizzes/assign", {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes/assign`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -6,7 +6,7 @@ export default function QuizPage() {
   const [quizzes, setQuizzes] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/quizzes")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/quizzes`)
       .then((res) => res.json())
       .then((data) => setQuizzes(data));
   }, []);

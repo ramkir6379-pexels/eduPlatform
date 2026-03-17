@@ -25,7 +25,7 @@ export default function StudentClassesPage() {
 
   const fetchEnrolledClasses = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/classes/student/3");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/student/3`);
       const data = await res.json();
       setEnrolledClasses(data);
     } catch (error) {
@@ -41,7 +41,7 @@ export default function StudentClassesPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/classes/join", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

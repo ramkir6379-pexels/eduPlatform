@@ -6,7 +6,7 @@ export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/notifications/1")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/1`)
       .then((res) => res.json())
       .then((data) => setNotifications(data));
   }, []);

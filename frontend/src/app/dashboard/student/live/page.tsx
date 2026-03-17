@@ -21,7 +21,7 @@ export default function StudentLiveClassPage() {
 
   const fetchEnrolledClasses = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/classes/student/3");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/student/3`);
       const data = await res.json();
       setEnrolledClasses(data);
     } catch (error) {

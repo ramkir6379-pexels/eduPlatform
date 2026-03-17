@@ -22,7 +22,7 @@ export default function StudentAttendancePage() {
 
   const fetchAttendance = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/attendance/student/3");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/attendance/student/3`);
       const data = await res.json();
       setAttendance(data);
 

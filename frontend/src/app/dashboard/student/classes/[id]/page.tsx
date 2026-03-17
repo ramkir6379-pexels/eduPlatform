@@ -33,12 +33,12 @@ export default function StudentClassDetailPage() {
 
   const fetchClassData = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/classes/${classId}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/${classId}`);
       const data = await res.json();
       setClassData(data);
 
       // Fetch students in this class
-      const studentsRes = await fetch(`http://localhost:5000/api/classes/${classId}/students`);
+      const studentsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/${classId}/students`);
       const studentsData = await studentsRes.json();
       setStudents(studentsData);
     } catch (error) {

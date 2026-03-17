@@ -66,7 +66,7 @@ function LiveClassContent() {
 
         // Initialize socket
         console.log("Connecting to socket...");
-        socketRef.current = io("http://localhost:5000");
+        socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000");
 
         socketRef.current.on("connect", () => {
           console.log("Socket connected:", socketRef.current?.id);
@@ -230,7 +230,7 @@ function LiveClassContent() {
       if (!blob) return;
       const formData = new FormData();
       formData.append("frame", blob);
-      fetch("http://localhost:5000/api/engagement/frame", {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/engagement/frame`, {
         method: "POST",
         body: formData,
       });

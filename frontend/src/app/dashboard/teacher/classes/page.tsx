@@ -26,7 +26,7 @@ export default function TeacherClassesPage() {
 
   const fetchClasses = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/classes/teacher/2");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/teacher/2`);
       const data = await res.json();
       setClasses(data);
     } catch (error) {
@@ -41,7 +41,7 @@ export default function TeacherClassesPage() {
   }) => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/classes", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/classes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
