@@ -30,7 +30,7 @@ export const receiveFrame = async (req: Request, res: Response) => {
     });
 
     const response = await axios.post(
-      "https://eduplatform-1.onrender.com/analyze",
+      "https://dominative-fishily-nguyet.ngrok-free.dev/analyze",
       formData,
       {
         headers: formData.getHeaders(),
