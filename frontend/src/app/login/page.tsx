@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 
+console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
