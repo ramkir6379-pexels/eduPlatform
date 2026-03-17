@@ -4,6 +4,27 @@ export const migrateDatabase = async () => {
   try {
     console.log("Running database migrations...");
 
+    // Create engagement_events table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS engagement_events (
+        id SERIAL PRIMARY KEY,
+        student_id INTEGER NOT NULL REFERENCES users(id),
+        class_id INTEGER NOT NULL REFERENCES classes(id),
+        session_id VARCHAR(100),
+        emotion VARCHAR(50),
+        engagement_score FLOAT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log("✓ Created engagement_events table");
+
+    // Add session_id column if it doesn't exist (for existing tables)
+    await pool.query(`
+      ALTER TABLE engagement_events
+      ADD COLUMN IF NOT EXISTS session_id VARCHAR(100)
+    `);
+    console.log("✓ Added session_id column to engagement_events table");
+
     // Add teacher_id column if it doesn't exist
     await pool.query(`
       ALTER TABLE quizzes

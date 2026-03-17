@@ -31,6 +31,7 @@ function LiveClassContent() {
   const socketRef = useRef<Socket | null>(null);
   const peersRef = useRef<Map<string, any>>(new Map());
   const streamRef = useRef<MediaStream | null>(null);
+  const sessionIdRef = useRef<string>("");
 
   const [remoteUsers, setRemoteUsers] = useState<RemoteUser[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -38,6 +39,15 @@ function LiveClassContent() {
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Generate session ID on component mount
+  useEffect(() => {
+    const now = new Date();
+    const dateStr = now.toISOString().split("T")[0].replace(/-/g, "");
+    const timeStr = now.toTimeString().split(" ")[0].replace(/:/g, "");
+    sessionIdRef.current = `class-${classId}-${dateStr}-${timeStr}`;
+    console.log("Session ID:", sessionIdRef.current);
+  }, [classId]);
 
   // Initialize camera and socket
   useEffect(() => {
@@ -231,6 +241,9 @@ function LiveClassContent() {
       if (!blob) return;
       const formData = new FormData();
       formData.append("frame", blob);
+      formData.append("class_id", classId);
+      formData.append("student_id", localStorage.getItem("userId") || "0");
+      formData.append("session_id", sessionIdRef.current);
       fetch(`${API_URL}/api/engagement/frame`, {
         method: "POST",
         body: formData,
