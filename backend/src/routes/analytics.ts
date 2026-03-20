@@ -13,6 +13,6 @@ router.get("/sessions", getSessions);
 router.get("/class/:sessionId", getClassEngagement);
 router.get("/class-health/:sessionId", getClassHealth);
 router.get("/timeline/:sessionId", getEngagementTimeline);
-router.get("/students/:sessionId", getStudentEngagement);
+router.get("/student-engagement/:sessionId", getStudentEngagement);
 
 export default router;

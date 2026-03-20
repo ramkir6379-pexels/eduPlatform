@@ -43,6 +43,7 @@ export default function TeacherDashboard() {
   const [sessionId, setSessionId] = useState("");
   const [isLive, setIsLive] = useState(false);
   const [classHealth, setClassHealth] = useState<number | null>(null);
+  const [students, setStudents] = useState<any[]>([]);
 
   // Fetch available sessions
   useEffect(() => {
@@ -99,6 +100,15 @@ export default function TeacherDashboard() {
         setClassHealth(Number(data.avg_engagement));
       })
       .catch((error) => console.error("Error fetching class health:", error));
+
+    // Fetch student engagement
+    fetch(`${API_URL}/api/analytics/student-engagement/${sessionId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("STUDENT ENGAGEMENT:", data);
+        setStudents(data);
+      })
+      .catch((error) => console.error("Error fetching student engagement:", error));
   }, [sessionId]);
 
   // Socket listener for live updates
@@ -321,6 +331,52 @@ export default function TeacherDashboard() {
           </div>
 
           {/* Activity */}
+          <ChartCard title="Student Engagement">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-gray-100">
+                    <th className="text-left p-3 text-gray-700 font-semibold">Student</th>
+                    <th className="text-left p-3 text-gray-700 font-semibold">Engagement</th>
+                    <th className="text-left p-3 text-gray-700 font-semibold">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.length > 0 ? (
+                    students.map((s, i) => {
+                      const score = Number(s.avg_engagement);
+                      let status = "🔴 Low";
+                      let statusColor = "text-red-600";
+
+                      if (score > 0.7) {
+                        status = "🟢 High";
+                        statusColor = "text-green-600";
+                      } else if (score > 0.4) {
+                        status = "🟡 Medium";
+                        statusColor = "text-yellow-600";
+                      }
+
+                      return (
+                        <tr key={i} className="border-b hover:bg-gray-50 transition">
+                          <td className="p-3 font-medium">{s.name}</td>
+                          <td className="p-3">{(score * 100).toFixed(1)}%</td>
+                          <td className={`p-3 font-semibold ${statusColor}`}>{status}</td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="p-3 text-center text-gray-500">
+                        No student data available
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </ChartCard>
+
+          {/* Recent Activity */}
           <ChartCard title="Recent Activity">
             <table className="w-full">
               <thead>

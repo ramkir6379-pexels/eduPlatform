@@ -52,11 +52,13 @@ export const getStudentEngagement = async (req: Request, res: Response) => {
     const result = await pool.query(
       `
       SELECT
-        student_id,
-        AVG(engagement_score) as engagement
-      FROM engagement_events
-      WHERE session_id = $1
-      GROUP BY student_id
+        u.name,
+        AVG(e.engagement_score) as avg_engagement
+      FROM engagement_events e
+      JOIN users u ON u.id = e.student_id
+      WHERE e.session_id = $1
+      GROUP BY u.name
+      ORDER BY avg_engagement DESC
       `,
       [sessionId]
     );
