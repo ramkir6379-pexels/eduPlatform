@@ -1,5 +1,6 @@
 "use client";
 
+import { API_URL } from "@/config";
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
@@ -33,7 +34,7 @@ export default function TeacherDashboard() {
       try {
         const sessionId = "class-1-20260317-143414";
         const response = await fetch(
-          `http://localhost:5000/api/analytics/timeline/${sessionId}`
+          `${API_URL}/api/analytics/timeline/${sessionId}`
         );
         const data = await response.json();
         setTimeline(data);
