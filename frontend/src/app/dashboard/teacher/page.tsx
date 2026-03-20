@@ -26,6 +26,16 @@ const activities = [
   { student: "Priya", action: "Submitted Assignment", time: "2 hours ago" },
 ];
 
+// Format time consistently
+const formatTime = (dateString: string) => {
+  const d = new Date(dateString);
+  return d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+};
+
 export default function TeacherDashboard() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [timeline, setTimeline] = useState<any[]>([]);
@@ -88,6 +98,7 @@ export default function TeacherDashboard() {
 
     const socket = io(API_URL, {
       transports: ["websocket"],
+      reconnection: true,
     });
 
     socket.on("engagement_update", (data: any) => {
@@ -100,19 +111,21 @@ export default function TeacherDashboard() {
 
       setIsLive(true);
 
+      const formattedTime = formatTime(data.created_at);
+
       setTimeline((prev: any[]) => {
-        const exists = prev.find((p) => p.time === data.created_at);
+        const exists = prev.find((p) => p.time === formattedTime);
         if (exists) {
           console.log("DUPLICATE - skipping");
           return prev;
         }
 
-        console.log("ADDING NEW POINT");
+        console.log("ADDING NEW POINT:", formattedTime, data.engagement_score);
 
         return [
           ...prev,
           {
-            time: data.created_at,
+            time: formattedTime,
             engagement: Number(data.engagement_score),
           },
         ];
