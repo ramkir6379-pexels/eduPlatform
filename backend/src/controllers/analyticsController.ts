@@ -28,12 +28,12 @@ export const getEngagementTimeline = async (req: Request, res: Response) => {
     const result = await pool.query(
       `
       SELECT
-        DATE_TRUNC('minute', created_at) as time,
+        TO_CHAR(DATE_TRUNC('minute', created_at), 'HH24:MI:SS') as time,
         AVG(engagement_score) as engagement
       FROM engagement_events
       WHERE session_id = $1
-      GROUP BY time
-      ORDER BY time
+      GROUP BY DATE_TRUNC('minute', created_at)
+      ORDER BY DATE_TRUNC('minute', created_at)
       `,
       [sessionId]
     );

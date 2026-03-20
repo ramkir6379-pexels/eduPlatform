@@ -2,6 +2,7 @@
 
 import { API_URL } from "@/config";
 import { useEffect, useState } from "react";
+import { io } from "socket.io-client";
 import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
 import StatCard from "@/components/dashboard/StatCard";
@@ -26,13 +27,13 @@ const activities = [
 ];
 
 export default function TeacherDashboard() {
-  const [timeline, setTimeline] = useState([]);
+  const [timeline, setTimeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const sessionId = "class-1-20260317-143414";
 
   useEffect(() => {
     const fetchEngagementData = async () => {
       try {
-        const sessionId = "class-1-20260317-143414";
         const response = await fetch(
           `${API_URL}/api/analytics/timeline/${sessionId}`
         );
@@ -47,6 +48,31 @@ export default function TeacherDashboard() {
 
     fetchEngagementData();
   }, []);
+
+  useEffect(() => {
+    const socket = io(API_URL, {
+      transports: ["websocket"],
+    });
+
+    socket.on("engagement_update", (data: any) => {
+      console.log("LIVE:", data);
+
+      if (data.session_id !== sessionId) return;
+
+      setTimeline((prev: any[]) => [
+        ...prev,
+        {
+          time: data.created_at,
+          engagement: data.engagement_score,
+        },
+      ]);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [sessionId]);
+
   return (
     <div className="flex">
       <Sidebar role="teacher" />

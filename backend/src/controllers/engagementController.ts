@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import axios from "axios";
 import FormData from "form-data";
 import { pool } from "../db";
+import { io } from "../server";
 
 export const receiveFrame = async (req: Request, res: Response) => {
   try {
@@ -47,6 +48,14 @@ export const receiveFrame = async (req: Request, res: Response) => {
        VALUES ($1, $2, $3, $4, $5)`,
       [student_id, class_id, session_id || null, emotion, engagement_score]
     );
+
+    // Emit real-time update via socket
+    io.emit("engagement_update", {
+      session_id,
+      engagement_score,
+      emotion,
+      created_at: new Date().toISOString(),
+    });
 
     res.json({
       success: true,

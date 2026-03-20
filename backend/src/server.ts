@@ -31,6 +31,8 @@ app.use(cors({
 app.use(express.json());
 app.use(upload.single("frame"));
 
+let io: any;
+
 // Initialize database and run migrations
 const startServer = async () => {
   await initializeDatabase();
@@ -53,13 +55,13 @@ const startServer = async () => {
 
   const httpServer = createServer(app);
 
-  const io = new Server(httpServer, {
+  io = new Server(httpServer, {
     cors: {
       origin: "*",
     },
   });
 
-  io.on("connection", (socket) => {
+  io.on("connection", (socket: any) => {
     console.log("User connected:", socket.id);
     let currentRoom: string | null = null;
     let userRole: string = "student";
@@ -76,7 +78,7 @@ const startServer = async () => {
       socket.to(roomId).emit("user-joined", { id: socket.id, role: userRole });
     });
 
-    socket.on("signal", ({ target, data }) => {
+    socket.on("signal", ({ target, data }: any) => {
       io.to(target).emit("signal", { data, from: socket.id });
     });
 
@@ -102,3 +104,5 @@ startServer().catch((error) => {
   console.error("Failed to start server:", error);
   process.exit(1);
 });
+
+export { io };
