@@ -42,6 +42,7 @@ export default function TeacherDashboard() {
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState("");
   const [isLive, setIsLive] = useState(false);
+  const [classHealth, setClassHealth] = useState<number | null>(null);
 
   // Fetch available sessions
   useEffect(() => {
@@ -69,6 +70,7 @@ export default function TeacherDashboard() {
     setLoading(true);
     setTimeline([]);
     setIsLive(false);
+    setClassHealth(null);
 
     fetch(`${API_URL}/api/analytics/timeline/${sessionId}`)
       .then((res) => res.json())
@@ -88,6 +90,15 @@ export default function TeacherDashboard() {
         console.error("Error fetching initial data:", error);
         setLoading(false);
       });
+
+    // Fetch class health
+    fetch(`${API_URL}/api/analytics/class-health/${sessionId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("CLASS HEALTH:", data);
+        setClassHealth(Number(data.avg_engagement));
+      })
+      .catch((error) => console.error("Error fetching class health:", error));
   }, [sessionId]);
 
   // Socket listener for live updates
@@ -257,6 +268,24 @@ export default function TeacherDashboard() {
 
           {/* Chart */}
           <div className="grid grid-cols-1 gap-6 mb-8">
+            {/* Class Health Card */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">Class Health</h3>
+              <div className="text-3xl font-bold">
+                {classHealth !== null
+                  ? classHealth > 0.7
+                    ? "🟢 Good"
+                    : classHealth > 0.4
+                    ? "🟡 Average"
+                    : "🔴 Poor"
+                  : "Loading..."}
+              </div>
+              <p className="text-gray-600 mt-2">
+                Average Engagement: {classHealth !== null ? (classHealth * 100).toFixed(1) : "N/A"}%
+              </p>
+            </div>
+
+            {/* Timeline Chart */}
             <ChartCard title="Live Engagement Timeline">
               {loading ? (
                 <div className="flex items-center justify-center h-300 text-gray-500">

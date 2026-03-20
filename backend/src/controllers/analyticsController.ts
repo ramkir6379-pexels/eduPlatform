@@ -84,3 +84,23 @@ export const getSessions = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch sessions" });
   }
 };
+
+export const getClassHealth = async (req: Request, res: Response) => {
+  try {
+    const { sessionId } = req.params;
+
+    const result = await pool.query(
+      `
+      SELECT AVG(engagement_score) as avg_engagement
+      FROM engagement_events
+      WHERE session_id = $1
+      `,
+      [sessionId]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Error fetching class health:", error);
+    res.status(500).json({ error: "Failed to fetch class health" });
+  }
+};
