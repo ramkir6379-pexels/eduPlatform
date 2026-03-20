@@ -32,7 +32,7 @@ export default function TeacherDashboard() {
   const [sessionId, setSessionId] = useState("");
   const [isLive, setIsLive] = useState(false);
 
-  // Step 1: Always fetch initial data
+  // STEP 1: Initial fetch (always)
   useEffect(() => {
     if (!sessionId) return;
 
@@ -48,46 +48,68 @@ export default function TeacherDashboard() {
       });
   }, [sessionId]);
 
-  // Step 2: Conditional logic - WebSocket OR Polling
+  // STEP 1.5: Listen for first engagement event to auto-enable live mode
   useEffect(() => {
-    if (isLive) {
-      // WebSocket mode
-      const socket = io(API_URL, {
-        transports: ["websocket"],
-      });
+    const socket = io(API_URL, {
+      transports: ["websocket"],
+    });
 
-      socket.on("engagement_update", (data: any) => {
-        console.log("LIVE:", data);
+    socket.on("engagement_update", (data: any) => {
+      if (!sessionId) {
+        setSessionId(data.session_id);
+      }
+      setIsLive(true);
+    });
 
-        if (!sessionId) {
-          setSessionId(data.session_id);
-        }
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
-        if (data.session_id !== sessionId) return;
+  // STEP 2: Socket effect (ONLY when live)
+  useEffect(() => {
+    if (!isLive) return;
 
-        setTimeline((prev: any[]) => [
+    const socket = io(API_URL, {
+      transports: ["websocket"],
+    });
+
+    socket.on("engagement_update", (data: any) => {
+      console.log("LIVE:", data);
+
+      if (data.session_id !== sessionId) return;
+
+      setTimeline((prev: any[]) => {
+        const exists = prev.find((p) => p.time === data.created_at);
+        if (exists) return prev;
+
+        return [
           ...prev,
           {
             time: data.created_at,
             engagement: data.engagement_score,
           },
-        ]);
+        ];
       });
+    });
 
-      return () => socket.disconnect();
-    } else {
-      // Polling mode
-      if (!sessionId) return;
+    return () => {
+      socket.disconnect();
+    };
+  }, [isLive, sessionId]);
 
-      const interval = setInterval(() => {
-        fetch(`${API_URL}/api/analytics/timeline/${sessionId}`)
-          .then((res) => res.json())
-          .then((data) => setTimeline(data))
-          .catch((error) => console.error("Polling error:", error));
-      }, 10000);
+  // STEP 3: Polling effect (ONLY when NOT live)
+  useEffect(() => {
+    if (isLive || !sessionId) return;
 
-      return () => clearInterval(interval);
-    }
+    const interval = setInterval(() => {
+      fetch(`${API_URL}/api/analytics/timeline/${sessionId}`)
+        .then((res) => res.json())
+        .then((data) => setTimeline(data))
+        .catch((error) => console.error("Polling error:", error));
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, [isLive, sessionId]);
 
   return (
