@@ -1,13 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
 import StatCard from "@/components/dashboard/StatCard";
 import ChartCard from "@/components/dashboard/ChartCard";
 import { BookOpen, Users, ClipboardCheck, BarChart3, Plus } from "lucide-react";
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -15,12 +16,6 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-
-const quizData = [
-  { quiz: "Quiz 1", avg: 72 },
-  { quiz: "Quiz 2", avg: 81 },
-  { quiz: "Quiz 3", avg: 65 },
-];
 
 const activities = [
   { student: "Ravi", action: "Submitted Quiz", time: "5 min ago" },
@@ -30,6 +25,27 @@ const activities = [
 ];
 
 export default function TeacherDashboard() {
+  const [timeline, setTimeline] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEngagementData = async () => {
+      try {
+        const sessionId = "class-1-20260317-143414";
+        const response = await fetch(
+          `http://localhost:5000/api/analytics/timeline/${sessionId}`
+        );
+        const data = await response.json();
+        setTimeline(data);
+      } catch (error) {
+        console.error("Error fetching engagement data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEngagementData();
+  }, []);
   return (
     <div className="flex">
       <Sidebar role="teacher" />
@@ -87,17 +103,33 @@ export default function TeacherDashboard() {
 
           {/* Chart */}
           <div className="grid grid-cols-1 gap-6 mb-8">
-            <ChartCard title="Quiz Average Scores">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={quizData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="quiz" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="avg" fill="#3b82f6" />
-                </BarChart>
-              </ResponsiveContainer>
+            <ChartCard title="Live Engagement Timeline">
+              {loading ? (
+                <div className="flex items-center justify-center h-300 text-gray-500">
+                  Loading engagement data...
+                </div>
+              ) : timeline.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={timeline}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="time" />
+                    <YAxis domain={[0, 1]} />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="engagement"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      name="Engagement Score"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-300 text-gray-500">
+                  No engagement data available
+                </div>
+              )}
             </ChartCard>
           </div>
 
