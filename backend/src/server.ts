@@ -11,6 +11,7 @@ import quizRoutes from "./routes/quiz";
 import notificationRoutes from "./routes/notifications";
 import adminRoutes from "./routes/admin";
 import engagementRoutes from "./routes/engagement";
+import analyticsRoutes from "./routes/analytics";
 import { pool } from "./db";
 import { initializeDatabase } from "./init-db";
 import { migrateDatabase } from "./migrate-db";
@@ -43,6 +44,7 @@ const startServer = async () => {
   app.use("/api/notifications", notificationRoutes);
   app.use("/api/admin", adminRoutes);
   app.use("/api/engagement", engagementRoutes);
+  app.use("/api/analytics", analyticsRoutes);
 
   app.get("/test-db", async (req, res) => {
     const result = await pool.query("SELECT NOW()");
