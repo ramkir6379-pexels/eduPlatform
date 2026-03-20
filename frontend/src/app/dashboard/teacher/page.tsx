@@ -55,6 +55,23 @@ export default function TeacherDashboard() {
     };
   }, []);
 
+  // Fallback polling every 5 seconds
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const interval = setInterval(() => {
+      fetch(`${API_URL}/api/analytics/timeline/${sessionId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setTimeline(data);
+          setLoading(false);
+        })
+        .catch((error) => console.error("Polling error:", error));
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [sessionId]);
+
   return (
     <div className="flex">
       <Sidebar role="teacher" />
