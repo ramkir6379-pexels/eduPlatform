@@ -30,47 +30,65 @@ export default function TeacherDashboard() {
   const [timeline, setTimeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState("");
+  const [isLive, setIsLive] = useState(false);
 
-  useEffect(() => {
-    const socket = io(API_URL, {
-      transports: ["websocket"],
-    });
-
-    socket.on("engagement_update", (data: any) => {
-      console.log("LIVE:", data);
-
-      setSessionId(data.session_id);
-
-      setTimeline((prev: any[]) => [
-        ...prev,
-        {
-          time: data.created_at,
-          engagement: data.engagement_score,
-        },
-      ]);
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
-
-  // Fallback polling every 5 seconds
+  // Step 1: Always fetch initial data
   useEffect(() => {
     if (!sessionId) return;
 
-    const interval = setInterval(() => {
-      fetch(`${API_URL}/api/analytics/timeline/${sessionId}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setTimeline(data);
-          setLoading(false);
-        })
-        .catch((error) => console.error("Polling error:", error));
-    }, 5000);
-
-    return () => clearInterval(interval);
+    fetch(`${API_URL}/api/analytics/timeline/${sessionId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setTimeline(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching initial data:", error);
+        setLoading(false);
+      });
   }, [sessionId]);
+
+  // Step 2: Conditional logic - WebSocket OR Polling
+  useEffect(() => {
+    if (isLive) {
+      // WebSocket mode
+      const socket = io(API_URL, {
+        transports: ["websocket"],
+      });
+
+      socket.on("engagement_update", (data: any) => {
+        console.log("LIVE:", data);
+
+        if (!sessionId) {
+          setSessionId(data.session_id);
+        }
+
+        if (data.session_id !== sessionId) return;
+
+        setTimeline((prev: any[]) => [
+          ...prev,
+          {
+            time: data.created_at,
+            engagement: data.engagement_score,
+          },
+        ]);
+      });
+
+      return () => socket.disconnect();
+    } else {
+      // Polling mode
+      if (!sessionId) return;
+
+      const interval = setInterval(() => {
+        fetch(`${API_URL}/api/analytics/timeline/${sessionId}`)
+          .then((res) => res.json())
+          .then((data) => setTimeline(data))
+          .catch((error) => console.error("Polling error:", error));
+      }, 10000);
+
+      return () => clearInterval(interval);
+    }
+  }, [isLive, sessionId]);
 
   return (
     <div className="flex">
@@ -96,6 +114,16 @@ export default function TeacherDashboard() {
             </button>
             <button className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
               <Plus size={20} /> Create Quiz
+            </button>
+            <button
+              onClick={() => setIsLive(!isLive)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-medium ${
+                isLive
+                  ? "bg-red-600 text-white hover:bg-red-700"
+                  : "bg-gray-600 text-white hover:bg-gray-700"
+              }`}
+            >
+              {isLive ? "🔴 Live Mode" : "⚪ Polling Mode"}
             </button>
           </div>
 
