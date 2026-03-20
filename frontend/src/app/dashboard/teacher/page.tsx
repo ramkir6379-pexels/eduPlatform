@@ -27,21 +27,38 @@ const activities = [
 ];
 
 export default function TeacherDashboard() {
+  const [sessions, setSessions] = useState<any[]>([]);
   const [timeline, setTimeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sessionId, setSessionId] = useState("class-1-20260317-143414");
+  const [sessionId, setSessionId] = useState("");
   const [isLive, setIsLive] = useState(false);
 
-  // DEBUG: Log isLive state
+  // Fetch available sessions
   useEffect(() => {
-    console.log("isLive:", isLive);
-  }, [isLive]);
+    console.log("FETCHING SESSIONS...");
 
-  // STEP 1: Initial fetch (always)
+    fetch(`${API_URL}/api/analytics/sessions`)
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("SESSIONS:", data);
+        setSessions(data);
+
+        // Auto-select latest session
+        if (data.length > 0) {
+          setSessionId(data[0].session_id);
+        }
+      })
+      .catch((error) => console.error("Error fetching sessions:", error));
+  }, []);
+
+  // Initial fetch when session changes
   useEffect(() => {
     if (!sessionId) return;
 
     console.log("FETCH CALLED with:", sessionId);
+    setLoading(true);
+    setTimeline([]);
+    setIsLive(false);
 
     fetch(`${API_URL}/api/analytics/timeline/${sessionId}`)
       .then((res) => res.json())
@@ -63,71 +80,55 @@ export default function TeacherDashboard() {
       });
   }, [sessionId]);
 
-  // STEP 1.5: Listen for first engagement event to auto-enable live mode
+  // Socket listener for live updates
   useEffect(() => {
-    const socket = io(API_URL, {
-      transports: ["websocket"],
-    });
+    if (!sessionId) return;
 
-    socket.on("engagement_update", (data: any) => {
-      console.log("ENGAGEMENT UPDATE RECEIVED:", data);
-
-      if (!sessionId) {
-        setSessionId(data.session_id);
-      }
-      setIsLive(true);
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
-
-  // STEP 2: Socket effect (ONLY when live)
-  useEffect(() => {
-    if (!isLive) return;
-
-    console.log("SOCKET EFFECT RUNNING");
+    console.log("SOCKET LISTENER STARTED for:", sessionId);
 
     const socket = io(API_URL, {
       transports: ["websocket"],
     });
 
     socket.on("engagement_update", (data: any) => {
-      console.log("LIVE UPDATE:", data);
+      console.log("ENGAGEMENT UPDATE:", data);
 
       if (data.session_id !== sessionId) {
-        console.log("SESSION MISMATCH:", data.session_id, "vs", sessionId);
+        console.log("SESSION MISMATCH - ignoring");
         return;
       }
+
+      setIsLive(true);
 
       setTimeline((prev: any[]) => {
         const exists = prev.find((p) => p.time === data.created_at);
         if (exists) {
-          console.log("DUPLICATE DETECTED:", data.created_at);
+          console.log("DUPLICATE - skipping");
           return prev;
         }
 
-        const newPoint = {
-          time: data.created_at,
-          engagement: Number(data.engagement_score),
-        };
+        console.log("ADDING NEW POINT");
 
-        console.log("ADDING NEW POINT:", newPoint);
-
-        return [...prev, newPoint];
+        return [
+          ...prev,
+          {
+            time: data.created_at,
+            engagement: Number(data.engagement_score),
+          },
+        ];
       });
     });
 
     return () => {
+      console.log("SOCKET DISCONNECTED");
       socket.disconnect();
     };
-  }, [isLive, sessionId]);
+  }, [sessionId]);
 
-  // STEP 3: Polling effect (ONLY when NOT live)
+  // Polling fallback (only when NOT live)
   useEffect(() => {
-    if (isLive || !sessionId) {
-      console.log("POLLING SKIPPED - isLive:", isLive, "sessionId:", sessionId);
+    if (!sessionId || isLive) {
+      console.log("POLLING SKIPPED - isLive:", isLive);
       return;
     }
 
@@ -139,8 +140,11 @@ export default function TeacherDashboard() {
       fetch(`${API_URL}/api/analytics/timeline/${sessionId}`)
         .then((res) => res.json())
         .then((data) => {
-          console.log("POLLING DATA:", data);
-          setTimeline(data);
+          const formatted = data.map((d: any) => ({
+            time: d.time,
+            engagement: Number(d.engagement),
+          }));
+          setTimeline(formatted);
         })
         .catch((error) => console.error("Polling error:", error));
     }, 10000);
@@ -149,7 +153,13 @@ export default function TeacherDashboard() {
       console.log("POLLING STOPPED");
       clearInterval(interval);
     };
-  }, [isLive, sessionId]);
+  }, [sessionId, isLive]);
+
+  const handleSessionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSessionId(e.target.value);
+    setIsLive(false);
+    setTimeline([]);
+  };
 
   return (
     <div className="flex">
@@ -165,6 +175,32 @@ export default function TeacherDashboard() {
             <p className="text-gray-600 mt-2">Welcome back! Here's your teaching overview.</p>
           </div>
 
+          {/* Session Selector */}
+          <div className="mb-8 bg-white rounded-lg shadow-md p-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Select Session
+            </label>
+            <div className="flex gap-4 items-center">
+              <select
+                value={sessionId}
+                onChange={handleSessionChange}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">-- Select a session --</option>
+                {sessions.map((s) => (
+                  <option key={s.session_id} value={s.session_id}>
+                    {s.session_id}
+                  </option>
+                ))}
+              </select>
+              {isLive && (
+                <span className="px-3 py-2 bg-red-100 text-red-800 rounded-lg font-semibold text-sm">
+                  🔴 LIVE
+                </span>
+              )}
+            </div>
+          </div>
+
           {/* Quick Actions */}
           <div className="mb-8 flex gap-4 flex-wrap">
             <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
@@ -175,16 +211,6 @@ export default function TeacherDashboard() {
             </button>
             <button className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
               <Plus size={20} /> Create Quiz
-            </button>
-            <button
-              onClick={() => setIsLive(!isLive)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition font-medium ${
-                isLive
-                  ? "bg-red-600 text-white hover:bg-red-700"
-                  : "bg-gray-600 text-white hover:bg-gray-700"
-              }`}
-            >
-              {isLive ? "🔴 Live Mode" : "⚪ Polling Mode"}
             </button>
           </div>
 
@@ -223,6 +249,10 @@ export default function TeacherDashboard() {
                 <div className="flex items-center justify-center h-300 text-gray-500">
                   Loading engagement data...
                 </div>
+              ) : !sessionId ? (
+                <div className="flex items-center justify-center h-300 text-gray-500">
+                  Select a session to view data
+                </div>
               ) : timeline.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={timeline}>
@@ -242,7 +272,7 @@ export default function TeacherDashboard() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-300 text-gray-500">
-                  No engagement data available
+                  No engagement data available for this session
                 </div>
               )}
             </ChartCard>

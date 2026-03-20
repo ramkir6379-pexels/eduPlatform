@@ -67,3 +67,20 @@ export const getStudentEngagement = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch student engagement" });
   }
 };
+
+export const getSessions = async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT DISTINCT session_id
+      FROM engagement_events
+      ORDER BY session_id DESC
+      `
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching sessions:", error);
+    res.status(500).json({ error: "Failed to fetch sessions" });
+  }
+};
