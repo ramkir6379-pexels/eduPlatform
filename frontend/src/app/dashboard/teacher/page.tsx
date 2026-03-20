@@ -29,25 +29,7 @@ const activities = [
 export default function TeacherDashboard() {
   const [timeline, setTimeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const sessionId = "class-1-20260317-143414";
-
-  useEffect(() => {
-    const fetchEngagementData = async () => {
-      try {
-        const response = await fetch(
-          `${API_URL}/api/analytics/timeline/${sessionId}`
-        );
-        const data = await response.json();
-        setTimeline(data);
-      } catch (error) {
-        console.error("Error fetching engagement data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEngagementData();
-  }, []);
+  const [sessionId, setSessionId] = useState("");
 
   useEffect(() => {
     const socket = io(API_URL, {
@@ -57,7 +39,7 @@ export default function TeacherDashboard() {
     socket.on("engagement_update", (data: any) => {
       console.log("LIVE:", data);
 
-      if (data.session_id !== sessionId) return;
+      setSessionId(data.session_id);
 
       setTimeline((prev: any[]) => [
         ...prev,
@@ -71,7 +53,7 @@ export default function TeacherDashboard() {
     return () => {
       socket.disconnect();
     };
-  }, [sessionId]);
+  }, []);
 
   return (
     <div className="flex">
