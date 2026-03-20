@@ -29,17 +29,32 @@ const activities = [
 export default function TeacherDashboard() {
   const [timeline, setTimeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sessionId, setSessionId] = useState("");
+  const [sessionId, setSessionId] = useState("class-1-20260317-143414");
   const [isLive, setIsLive] = useState(false);
+
+  // DEBUG: Log isLive state
+  useEffect(() => {
+    console.log("isLive:", isLive);
+  }, [isLive]);
 
   // STEP 1: Initial fetch (always)
   useEffect(() => {
     if (!sessionId) return;
 
+    console.log("FETCH CALLED with:", sessionId);
+
     fetch(`${API_URL}/api/analytics/timeline/${sessionId}`)
       .then((res) => res.json())
       .then((data) => {
-        setTimeline(data);
+        console.log("FETCH DATA:", data);
+
+        const formatted = data.map((d: any) => ({
+          time: d.time,
+          engagement: Number(d.engagement),
+        }));
+
+        console.log("FORMATTED:", formatted);
+        setTimeline(formatted);
         setLoading(false);
       })
       .catch((error) => {
@@ -55,6 +70,8 @@ export default function TeacherDashboard() {
     });
 
     socket.on("engagement_update", (data: any) => {
+      console.log("ENGAGEMENT UPDATE RECEIVED:", data);
+
       if (!sessionId) {
         setSessionId(data.session_id);
       }
@@ -70,26 +87,35 @@ export default function TeacherDashboard() {
   useEffect(() => {
     if (!isLive) return;
 
+    console.log("SOCKET EFFECT RUNNING");
+
     const socket = io(API_URL, {
       transports: ["websocket"],
     });
 
     socket.on("engagement_update", (data: any) => {
-      console.log("LIVE:", data);
+      console.log("LIVE UPDATE:", data);
 
-      if (data.session_id !== sessionId) return;
+      if (data.session_id !== sessionId) {
+        console.log("SESSION MISMATCH:", data.session_id, "vs", sessionId);
+        return;
+      }
 
       setTimeline((prev: any[]) => {
         const exists = prev.find((p) => p.time === data.created_at);
-        if (exists) return prev;
+        if (exists) {
+          console.log("DUPLICATE DETECTED:", data.created_at);
+          return prev;
+        }
 
-        return [
-          ...prev,
-          {
-            time: data.created_at,
-            engagement: data.engagement_score,
-          },
-        ];
+        const newPoint = {
+          time: data.created_at,
+          engagement: Number(data.engagement_score),
+        };
+
+        console.log("ADDING NEW POINT:", newPoint);
+
+        return [...prev, newPoint];
       });
     });
 
@@ -100,16 +126,29 @@ export default function TeacherDashboard() {
 
   // STEP 3: Polling effect (ONLY when NOT live)
   useEffect(() => {
-    if (isLive || !sessionId) return;
+    if (isLive || !sessionId) {
+      console.log("POLLING SKIPPED - isLive:", isLive, "sessionId:", sessionId);
+      return;
+    }
+
+    console.log("POLLING STARTED");
 
     const interval = setInterval(() => {
+      console.log("POLLING FETCH...");
+
       fetch(`${API_URL}/api/analytics/timeline/${sessionId}`)
         .then((res) => res.json())
-        .then((data) => setTimeline(data))
+        .then((data) => {
+          console.log("POLLING DATA:", data);
+          setTimeline(data);
+        })
         .catch((error) => console.error("Polling error:", error));
     }, 10000);
 
-    return () => clearInterval(interval);
+    return () => {
+      console.log("POLLING STOPPED");
+      clearInterval(interval);
+    };
   }, [isLive, sessionId]);
 
   return (
