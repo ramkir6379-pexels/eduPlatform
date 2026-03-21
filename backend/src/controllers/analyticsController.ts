@@ -209,17 +209,19 @@ export const getCombinedAnalytics = async (req: Request, res: Response) => {
     const avgEngagement = engagementResult.rows[0]?.avg_engagement || 0;
     const avgScore = quizResult.rows[0]?.avg_score || 0;
 
-    // Generate insight
-    let insight = "Class is performing well";
+    // Intelligent insight logic
+    let insight = "Mixed learning signals";
 
-    if (avgScore < 50 && avgEngagement < 0.5) {
+    if (avgEngagement < 0.5 && avgScore > 80) {
+      insight = "Students are understanding but appear disengaged";
+    } else if (avgEngagement < 0.5 && avgScore < 50) {
       insight = "Low engagement is affecting performance - intervention needed";
+    } else if (avgEngagement > 0.7 && avgScore > 70) {
+      insight = "Students are engaged and learning effectively";
     } else if (avgScore < 50) {
       insight = "Quiz performance is low - review content";
     } else if (avgEngagement < 0.5) {
       insight = "Low engagement detected - increase interactivity";
-    } else if (avgScore > 80 && avgEngagement > 0.7) {
-      insight = "Excellent engagement and performance";
     }
 
     res.json({
@@ -230,5 +232,33 @@ export const getCombinedAnalytics = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error fetching combined analytics:", error);
     res.status(500).json({ error: "Failed to fetch combined analytics" });
+  }
+};
+
+
+export const getStudentRanking = async (req: Request, res: Response) => {
+  try {
+    const { sessionId } = req.params;
+
+    const result = await pool.query(
+      `
+      SELECT
+        u.id,
+        u.name,
+        AVG(e.engagement_score) as engagement,
+        COUNT(*) as event_count
+      FROM engagement_events e
+      JOIN users u ON e.student_id = u.id
+      WHERE e.session_id = $1
+      GROUP BY u.id, u.name
+      ORDER BY engagement DESC
+      `,
+      [sessionId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching student ranking:", error);
+    res.status(500).json({ error: "Failed to fetch student ranking" });
   }
 };

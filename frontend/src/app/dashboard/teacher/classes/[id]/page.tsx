@@ -7,6 +7,7 @@ import Topbar from "@/components/dashboard/Topbar";
 import EmotionDistribution from "@/components/EmotionDistribution";
 import QuizPerformance from "@/components/QuizPerformance";
 import CombinedAnalytics from "@/components/CombinedAnalytics";
+import StudentRanking from "@/components/StudentRanking";
 import { ArrowLeft, Play, ClipboardCheck, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { API_URL } from "@/config";
@@ -150,6 +151,13 @@ export default function ClassDetailPage() {
           {sessionId && (
             <div className="mb-8">
               <CombinedAnalytics classId={String(classId)} sessionId={sessionId} />
+            </div>
+          )}
+
+          {/* Student Ranking */}
+          {sessionId && (
+            <div className="mb-8">
+              <StudentRanking sessionId={sessionId} />
             </div>
           )}
 
