@@ -4,7 +4,7 @@ import { io } from "../server";
 
 export const createLiveQuiz = async (req: Request, res: Response) => {
   try {
-    const { question, options, correct_answer, session_id, class_id } = req.body;
+    const { question, options, correct_answer, session_id, class_id, teacher_id } = req.body;
 
     if (!question || !options || !correct_answer || !session_id) {
       return res.status(400).json({
@@ -12,14 +12,24 @@ export const createLiveQuiz = async (req: Request, res: Response) => {
       });
     }
 
+    if (!teacher_id) {
+      return res.status(400).json({ error: "teacher_id required" });
+    }
+
+    console.log("REQ BODY:", req.body);
+    console.log("QUESTION:", question);
+    console.log("OPTIONS:", options);
+    console.log("CORRECT_ANSWER:", correct_answer);
+    console.log("TEACHER_ID:", teacher_id);
+
     // Insert live quiz
     const result = await pool.query(
       `
-      INSERT INTO quizzes (title, description, is_live, class_id, created_at)
-      VALUES ($1, $2, true, $3, CURRENT_TIMESTAMP)
+      INSERT INTO quizzes (title, description, is_live, class_id, teacher_id, created_at)
+      VALUES ($1, $2, true, $3, $4, CURRENT_TIMESTAMP)
       RETURNING id, title, created_at
       `,
-      [question, JSON.stringify(options), class_id || null]
+      [question, JSON.stringify(options), class_id || null, teacher_id]
     );
 
     const quizId = result.rows[0].id;

@@ -59,6 +59,12 @@ export default function LiveQuiz({
       return;
     }
 
+    const teacherId = localStorage.getItem("userId");
+    if (!teacherId) {
+      alert("Teacher ID not found. Please log in again.");
+      return;
+    }
+
     try {
       const response = await fetch(`${API_URL}/api/live-quiz/create`, {
         method: "POST",
@@ -69,6 +75,7 @@ export default function LiveQuiz({
           correct_answer: correctAnswer,
           session_id: sessionId,
           class_id: classId,
+          teacher_id: teacherId,
         }),
       });
 

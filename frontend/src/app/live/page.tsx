@@ -42,6 +42,7 @@ function LiveClassContent() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [studentId, setStudentId] = useState<string>("");
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   // Generate session ID on component mount
   useEffect(() => {
@@ -303,8 +304,8 @@ function LiveClassContent() {
         studentId={studentId}
       />
 
-      {/* Live Quiz Analytics (Teacher only) */}
-      {userRole === "teacher" && (
+      {/* Live Quiz Analytics (Teacher only, toggleable) */}
+      {userRole === "teacher" && showAnalytics && (
         <LiveQuizAnalytics sessionId={sessionIdRef.current} />
       )}
 
@@ -415,6 +416,16 @@ function LiveClassContent() {
             <VideoOff className="text-white" size={24} />
           )}
         </button>
+
+        {userRole === "teacher" && (
+          <button
+            onClick={() => setShowAnalytics((prev) => !prev)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full flex items-center gap-2 transition"
+            title="Toggle Analytics"
+          >
+            📊 Analytics
+          </button>
+        )}
 
         <button
           onClick={leaveClass}
