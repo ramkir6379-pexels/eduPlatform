@@ -25,8 +25,16 @@ function LiveClassContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const classId = searchParams.get("classId") || "class-1";
-  const userRole = searchParams.get("role") || "student";
+  const userRoleRaw = searchParams.get("role") || localStorage.getItem("userRole") || "student";
+  const userRole = userRoleRaw.toLowerCase();
 
+  // Validate role
+  if (userRole !== "teacher" && userRole !== "student") {
+    throw new Error("Invalid role: " + userRoleRaw);
+  }
+
+  console.log("ROLE RAW:", userRoleRaw);
+  console.log("ROLE USED:", userRole);
   console.log("URL Params - classId:", classId, "role:", userRole);
 
   const myVideoRef = useRef<HTMLVideoElement>(null);

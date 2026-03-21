@@ -44,6 +44,26 @@ export default function TeacherDashboard() {
   const [isLive, setIsLive] = useState(false);
   const [classHealth, setClassHealth] = useState<number | null>(null);
   const [students, setStudents] = useState<any[]>([]);
+  const [selectedClassId, setSelectedClassId] = useState<string>("1");
+  const [classes, setClasses] = useState<any[]>([]);
+  const [startingLive, setStartingLive] = useState(false);
+
+  // Fetch teacher's classes
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+
+    fetch(`${API_URL}/api/classes/teacher/${userId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("CLASSES:", data);
+        setClasses(data);
+        if (data.length > 0) {
+          setSelectedClassId(data[0].id);
+        }
+      })
+      .catch((error) => console.error("Error fetching classes:", error));
+  }, []);
 
   // Fetch available sessions
   useEffect(() => {
@@ -195,6 +215,34 @@ export default function TeacherDashboard() {
     setTimeline([]);
   };
 
+  const handleStartLiveClass = async () => {
+    try {
+      setStartingLive(true);
+      console.log("Starting live class for class:", selectedClassId);
+
+      // Create session in backend
+      const response = await fetch(
+        `${API_URL}/api/classes/${selectedClassId}/session/start`,
+        { method: "POST" }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to start session");
+      }
+
+      const data = await response.json();
+      console.log("Session created:", data.session_id);
+
+      // Navigate to live page
+      const userRole = localStorage.getItem("userRole") || "teacher";
+      window.location.href = `/live?classId=${selectedClassId}&role=${userRole}`;
+    } catch (error) {
+      console.error("Error starting live class:", error);
+      alert("Failed to start live class. Please try again.");
+      setStartingLive(false);
+    }
+  };
+
   return (
     <div className="flex">
       <Sidebar role="teacher" />
@@ -207,6 +255,25 @@ export default function TeacherDashboard() {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-800">👨‍🏫 Teacher Dashboard</h1>
             <p className="text-gray-600 mt-2">Welcome back! Here's your teaching overview.</p>
+          </div>
+
+          {/* Class Selector for Live Class */}
+          <div className="mb-8 bg-white rounded-lg shadow-md p-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Select Class to Start Live
+            </label>
+            <select
+              value={selectedClassId}
+              onChange={(e) => setSelectedClassId(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">-- Select a class --</option>
+              {classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Session Selector */}
@@ -234,14 +301,16 @@ export default function TeacherDashboard() {
               )}
             </div>
           </div>
-
-          {/* Quick Actions */}
           <div className="mb-8 flex gap-4 flex-wrap">
             <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
               <Plus size={20} /> Create Class
             </button>
-            <button className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition">
-              <Plus size={20} /> Start Live Class
+            <button
+              onClick={handleStartLiveClass}
+              disabled={startingLive || !selectedClassId}
+              className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus size={20} /> {startingLive ? "Starting..." : "Start Live Class"}
             </button>
             <button className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
               <Plus size={20} /> Create Quiz
