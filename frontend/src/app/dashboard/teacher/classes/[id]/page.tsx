@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
+import EmotionDistribution from "@/components/EmotionDistribution";
 import { ArrowLeft, Play, ClipboardCheck, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { API_URL } from "@/config";
@@ -27,6 +28,7 @@ export default function ClassDetailPage() {
   const [classData, setClassData] = useState<ClassData | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchClassData();
@@ -42,6 +44,14 @@ export default function ClassDetailPage() {
       const studentsRes = await fetch(`${API_URL}/api/classes/${classId}/students`);
       const studentsData = await studentsRes.json();
       setStudents(studentsData);
+
+      // Fetch latest session for this class
+      const sessionsRes = await fetch(`${API_URL}/api/analytics/sessions`);
+      const sessionsData = await sessionsRes.json();
+      const classSession = sessionsData.find((s: any) => s.session_id?.includes(classId));
+      if (classSession) {
+        setSessionId(classSession.session_id);
+      }
     } catch (error) {
       console.error("Error fetching class data:", error);
     } finally {
@@ -121,6 +131,13 @@ export default function ClassDetailPage() {
               <BookOpen size={20} /> Create Quiz
             </button>
           </div>
+
+          {/* Emotion Distribution */}
+          {sessionId && (
+            <div className="mb-8">
+              <EmotionDistribution sessionId={sessionId} />
+            </div>
+          )}
 
           {/* Students List */}
           <div className="bg-white rounded-xl shadow-md overflow-hidden">

@@ -106,3 +106,25 @@ export const getClassHealth = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch class health" });
   }
 };
+
+export const getEmotionDistribution = async (req: Request, res: Response) => {
+  try {
+    const { sessionId } = req.params;
+
+    const result = await pool.query(
+      `
+      SELECT emotion, COUNT(*) as count
+      FROM engagement_events
+      WHERE session_id = $1
+      GROUP BY emotion
+      ORDER BY count DESC
+      `,
+      [sessionId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching emotion distribution:", error);
+    res.status(500).json({ error: "Failed to fetch emotion distribution" });
+  }
+};
