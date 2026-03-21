@@ -7,6 +7,8 @@ import { io, Socket } from "socket.io-client";
 import Peer from "simple-peer";
 import { Phone, Mic, MicOff, Video, VideoOff, X } from "lucide-react";
 import { API_URL, SOCKET_URL } from "@/config";
+import LiveQuiz from "@/components/LiveQuiz";
+import LiveQuizAnalytics from "@/components/LiveQuizAnalytics";
 
 interface RemoteUser {
   id: string;
@@ -39,6 +41,7 @@ function LiveClassContent() {
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [studentId, setStudentId] = useState<string>("");
 
   // Generate session ID on component mount
   useEffect(() => {
@@ -47,6 +50,12 @@ function LiveClassContent() {
     const timeStr = now.toTimeString().split(" ")[0].replace(/:/g, "");
     sessionIdRef.current = `class-${classId}-${dateStr}-${timeStr}`;
     console.log("Session ID:", sessionIdRef.current);
+
+    // Get student ID from localStorage
+    const storedStudentId = localStorage.getItem("userId");
+    if (storedStudentId) {
+      setStudentId(storedStudentId);
+    }
   }, [classId]);
 
   // Initialize camera and socket
@@ -285,6 +294,20 @@ function LiveClassContent() {
 
   return (
     <div className="h-screen bg-gray-900 flex flex-col">
+      {/* Live Quiz Component */}
+      <LiveQuiz
+        socket={socketRef.current}
+        classId={classId}
+        sessionId={sessionIdRef.current}
+        userRole={userRole as "teacher" | "student"}
+        studentId={studentId}
+      />
+
+      {/* Live Quiz Analytics (Teacher only) */}
+      {userRole === "teacher" && (
+        <LiveQuizAnalytics sessionId={sessionIdRef.current} />
+      )}
+
       {/* Header */}
       <div className="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center">
         <div>

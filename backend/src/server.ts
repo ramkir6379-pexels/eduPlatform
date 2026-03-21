@@ -8,6 +8,7 @@ import userRoutes from "./routes/users";
 import classRoutes from "./routes/classes";
 import attendanceRoutes from "./routes/attendance";
 import quizRoutes from "./routes/quiz";
+import liveQuizRoutes from "./routes/liveQuiz";
 import notificationRoutes from "./routes/notifications";
 import adminRoutes from "./routes/admin";
 import engagementRoutes from "./routes/engagement";
@@ -43,6 +44,7 @@ const startServer = async () => {
   app.use("/api", classRoutes);
   app.use("/api", attendanceRoutes);
   app.use("/api/quizzes", quizRoutes);
+  app.use("/api/live-quiz", liveQuizRoutes);
   app.use("/api/notifications", notificationRoutes);
   app.use("/api/admin", adminRoutes);
   app.use("/api/engagement", engagementRoutes);

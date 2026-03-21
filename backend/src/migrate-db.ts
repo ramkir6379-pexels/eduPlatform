@@ -54,6 +54,34 @@ export const migrateDatabase = async () => {
     `);
     console.log("✓ Set NOT NULL constraint on teacher_id");
 
+    // Add session_id to quiz_submissions for live quiz tracking
+    await pool.query(`
+      ALTER TABLE quiz_submissions
+      ADD COLUMN IF NOT EXISTS session_id VARCHAR(100)
+    `);
+    console.log("✓ Added session_id column to quiz_submissions table");
+
+    // Add is_live flag to quizzes
+    await pool.query(`
+      ALTER TABLE quizzes
+      ADD COLUMN IF NOT EXISTS is_live BOOLEAN DEFAULT false
+    `);
+    console.log("✓ Added is_live column to quizzes table");
+
+    // Add answer column to quiz_submissions for live quiz answers
+    await pool.query(`
+      ALTER TABLE quiz_submissions
+      ADD COLUMN IF NOT EXISTS answer VARCHAR(255)
+    `);
+    console.log("✓ Added answer column to quiz_submissions table");
+
+    // Add total_questions to quiz_submissions
+    await pool.query(`
+      ALTER TABLE quiz_submissions
+      ADD COLUMN IF NOT EXISTS total_questions INTEGER
+    `);
+    console.log("✓ Added total_questions column to quiz_submissions table");
+
     console.log("Database migrations completed successfully");
   } catch (error) {
     console.error("Error running migrations:", error);
