@@ -111,15 +111,32 @@ export default function LiveQuiz({
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to submit answer");
+      if (!response.ok) {
+        console.error("Submit failed, but continuing UI");
+        setSelectedAnswer(answer);
+        setSubmitted(true);
+        return;
+      }
 
       const data = await response.json();
       setSelectedAnswer(answer);
       setIsCorrect(data.isCorrect);
       setSubmitted(true);
+
+      // Auto-close quiz after 2 seconds
+      setTimeout(() => {
+        closeQuiz();
+      }, 2000);
     } catch (error) {
       console.error("Error submitting answer:", error);
-      alert("Failed to submit answer");
+      // Still show submitted state even on error
+      setSelectedAnswer(answer);
+      setSubmitted(true);
+      
+      // Auto-close after 2 seconds
+      setTimeout(() => {
+        closeQuiz();
+      }, 2000);
     }
   };
 
