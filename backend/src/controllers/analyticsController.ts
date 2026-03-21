@@ -122,7 +122,33 @@ export const getEmotionDistribution = async (req: Request, res: Response) => {
       [sessionId]
     );
 
-    res.json(result.rows);
+    // Generate insight based on emotion distribution
+    const total = result.rows.reduce((sum, r) => sum + Number(r.count), 0);
+    let insight = "Balanced class";
+
+    if (total > 0) {
+      const fear = Number(result.rows.find(r => r.emotion === "fear")?.count || 0);
+      const sad = Number(result.rows.find(r => r.emotion === "sad")?.count || 0);
+      const angry = Number(result.rows.find(r => r.emotion === "angry")?.count || 0);
+      const happy = Number(result.rows.find(r => r.emotion === "happy")?.count || 0);
+      const neutral = Number(result.rows.find(r => r.emotion === "neutral")?.count || 0);
+
+      const negativeRatio = (fear + sad + angry) / total;
+      const positiveRatio = happy / total;
+
+      if (negativeRatio > 0.5) {
+        insight = "Students are struggling";
+      } else if (positiveRatio > 0.6) {
+        insight = "Class is highly engaged";
+      } else if (neutral > total * 0.6) {
+        insight = "Class needs more engagement";
+      }
+    }
+
+    res.json({
+      data: result.rows,
+      insight,
+    });
   } catch (error) {
     console.error("Error fetching emotion distribution:", error);
     res.status(500).json({ error: "Failed to fetch emotion distribution" });

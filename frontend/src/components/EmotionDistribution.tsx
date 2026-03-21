@@ -8,6 +8,11 @@ interface EmotionData {
   count: string;
 }
 
+interface EmotionResponse {
+  data: EmotionData[];
+  insight: string;
+}
+
 interface EmotionDistributionProps {
   sessionId: string;
 }
@@ -19,6 +24,7 @@ const emotionEmojis: Record<string, string> = {
   sad: "😢",
   surprised: "😮",
   disgusted: "🤢",
+  fear: "😨",
 };
 
 const emotionColors: Record<string, string> = {
@@ -28,10 +34,19 @@ const emotionColors: Record<string, string> = {
   sad: "bg-blue-500",
   surprised: "bg-yellow-500",
   disgusted: "bg-purple-500",
+  fear: "bg-orange-500",
+};
+
+const getInsightColor = (insight: string): string => {
+  if (insight.includes("struggling")) return "text-red-600";
+  if (insight.includes("highly engaged")) return "text-green-600";
+  if (insight.includes("needs more")) return "text-yellow-600";
+  return "text-gray-600";
 };
 
 export default function EmotionDistribution({ sessionId }: EmotionDistributionProps) {
   const [emotions, setEmotions] = useState<EmotionData[]>([]);
+  const [insight, setInsight] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,8 +58,9 @@ export default function EmotionDistribution({ sessionId }: EmotionDistributionPr
         setLoading(true);
         const res = await fetch(`${API_URL}/api/analytics/emotion-distribution/${sessionId}`);
         if (!res.ok) throw new Error("Failed to fetch emotion data");
-        const data = await res.json();
-        setEmotions(data);
+        const data: EmotionResponse = await res.json();
+        setEmotions(data.data);
+        setInsight(data.insight);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error fetching data");
       } finally {
@@ -63,7 +79,12 @@ export default function EmotionDistribution({ sessionId }: EmotionDistributionPr
 
   return (
     <div className="bg-white rounded-xl shadow-md p-6">
-      <h3 className="text-lg font-bold text-gray-800 mb-4">Emotion Distribution</h3>
+      <div className="mb-6">
+        <h3 className="text-lg font-bold text-gray-800 mb-2">Emotion Distribution</h3>
+        <p className={`font-semibold text-base ${getInsightColor(insight)}`}>
+          💡 {insight}
+        </p>
+      </div>
       <div className="space-y-4">
         {emotions.map((emotion) => {
           const percentage = ((parseInt(emotion.count) / totalCount) * 100).toFixed(1);
