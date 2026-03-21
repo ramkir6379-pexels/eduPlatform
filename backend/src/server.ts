@@ -84,6 +84,12 @@ const startServer = async () => {
         console.log(`${socket.id} joined session room ${sessionId}`);
       }
 
+      // Send existing users to the new user
+      const clients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
+      const otherUsers = clients.filter((id) => id !== socket.id);
+      console.log(`Sending ${otherUsers.length} existing users to ${socket.id}`);
+      socket.emit("existing-users", otherUsers);
+
       // Notify others in the room with role info
       socket.to(roomId).emit("user-joined", { id: socket.id, role: userRole });
     });

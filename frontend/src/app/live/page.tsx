@@ -166,9 +166,20 @@ function LiveClassContent() {
           createPeerConnection(userId, true, stream);
         });
 
+        socketRef.current.on("existing-users", (users: string[]) => {
+          console.log("Existing users:", users);
+          users.forEach((userId) => {
+            if (!peersRef.current.has(userId)) {
+              console.log("Creating peer for existing user:", userId);
+              createPeerConnection(userId, true, stream);
+            }
+          });
+        });
+
         socketRef.current.on("signal", ({ from, data }: any) => {
           console.log("Signal received from:", from);
           if (!peersRef.current.has(from)) {
+            console.log("Creating peer from signal:", from);
             createPeerConnection(from, false, stream);
           }
           peersRef.current.get(from)?.signal(data);
@@ -238,6 +249,14 @@ function LiveClassContent() {
     initiator: boolean,
     stream: MediaStream
   ) => {
+    // Guard against duplicate peers
+    if (peersRef.current.has(userId)) {
+      console.log("Peer already exists for:", userId);
+      return;
+    }
+
+    console.log("Creating peer:", userId, "initiator:", initiator);
+
     const peer = new Peer({
       initiator,
       trickle: false,
@@ -255,6 +274,7 @@ function LiveClassContent() {
     });
 
     peer.on("stream", (remoteStream: MediaStream) => {
+      if (!remoteStream) return;
       console.log("Received remote stream from:", userId);
       setRemoteUsers((prev) => {
         const existing = prev.find((u) => u.id === userId);
