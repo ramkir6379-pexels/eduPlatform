@@ -67,14 +67,22 @@ const startServer = async () => {
     console.log("User connected:", socket.id);
     let currentRoom: string | null = null;
     let userRole: string = "student";
+    let sessionId: string | null = null;
 
     socket.on("join-room", (data: any) => {
       const roomId = data.classId || data.roomId || data;
       userRole = data.role || "student";
+      sessionId = data.sessionId || null;
 
       console.log(`${socket.id} joined room ${roomId} as ${userRole}`);
       socket.join(roomId);
       currentRoom = roomId;
+
+      // Also join session room for real-time analytics
+      if (sessionId) {
+        socket.join(sessionId);
+        console.log(`${socket.id} joined session room ${sessionId}`);
+      }
 
       // Notify others in the room with role info
       socket.to(roomId).emit("user-joined", { id: socket.id, role: userRole });

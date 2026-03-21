@@ -114,6 +114,14 @@ export const submitLiveQuizAnswer = async (req: Request, res: Response) => {
       });
     }
 
+    // Emit analytics update to all in session
+    if (session_id) {
+      io.to(session_id).emit("quiz_analytics_update", {
+        session_id,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     res.json({
       success: true,
       score,

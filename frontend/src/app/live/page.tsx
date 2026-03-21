@@ -91,7 +91,11 @@ function LiveClassContent() {
 
         socketRef.current.on("connect", () => {
           console.log("Socket connected:", socketRef.current?.id);
-          socketRef.current?.emit("join-room", { classId, role: userRole });
+          socketRef.current?.emit("join-room", { 
+            classId, 
+            role: userRole,
+            sessionId: sessionIdRef.current 
+          });
         });
 
         socketRef.current.on("user-joined", (data: any) => {
@@ -131,6 +135,15 @@ function LiveClassContent() {
           console.log("Class ended by teacher");
           alert("Class ended by teacher");
           leaveClass();
+        });
+
+        socketRef.current.on("quiz_analytics_update", () => {
+          console.log("Quiz analytics updated, fetching latest...");
+          // Trigger analytics refresh if teacher
+          if (userRole === "teacher") {
+            // This will be handled by the LiveQuizAnalytics component polling
+            console.log("Analytics update received");
+          }
         });
 
         // Add self to participants

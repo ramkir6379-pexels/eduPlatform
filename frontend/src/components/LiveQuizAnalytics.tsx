@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
+import { io } from "socket.io-client";
+import { SOCKET_URL } from "@/config";
 
 interface LiveQuizAnalyticsProps {
   sessionId: string;
@@ -19,29 +21,51 @@ export default function LiveQuizAnalytics({ sessionId }: LiveQuizAnalyticsProps)
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [socket, setSocket] = useState<any>(null);
+
+  // Fetch analytics function
+  const fetchAnalytics = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/live-quiz/analytics/${sessionId}`);
+      if (!res.ok) throw new Error("Failed to fetch analytics");
+      const data = await res.json();
+      setAnalytics(data);
+    } catch (err) {
+      console.error("Error fetching analytics:", err);
+      setError(err instanceof Error ? err.message : "Error fetching data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!sessionId) return;
 
-    const fetchAnalytics = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(`${API_URL}/api/live-quiz/analytics/${sessionId}`);
-        if (!res.ok) throw new Error("Failed to fetch analytics");
-        const data = await res.json();
-        setAnalytics(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error fetching data");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Fetch immediately and then every 2 seconds for real-time updates
+    // Initial fetch
     fetchAnalytics();
+
+    // Setup socket connection for real-time updates
+    const socketInstance = io(SOCKET_URL);
+    setSocket(socketInstance);
+
+    socketInstance.on("connect", () => {
+      console.log("Analytics socket connected");
+      socketInstance.join(sessionId);
+    });
+
+    // Listen for quiz analytics updates
+    socketInstance.on("quiz_analytics_update", () => {
+      console.log("Received quiz_analytics_update, refreshing...");
+      fetchAnalytics();
+    });
+
+    // Fallback: poll every 2 seconds
     const interval = setInterval(fetchAnalytics, 2000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      socketInstance.disconnect();
+    };
   }, [sessionId]);
 
   if (loading) return <div className="text-gray-600">Loading quiz analytics...</div>;
