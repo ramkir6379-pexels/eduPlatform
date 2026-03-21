@@ -6,6 +6,8 @@ import {
   getSessions,
   getClassHealth,
   getEmotionDistribution,
+  getQuizPerformance,
+  getCombinedAnalytics,
 } from "../controllers/analyticsController";
 
 const router = express.Router();
@@ -16,5 +18,7 @@ router.get("/class-health/:sessionId", getClassHealth);
 router.get("/timeline/:sessionId", getEngagementTimeline);
 router.get("/student-engagement/:sessionId", getStudentEngagement);
 router.get("/emotion-distribution/:sessionId", getEmotionDistribution);
+router.get("/quiz-performance/:classId", getQuizPerformance);
+router.get("/combined/:classId/:sessionId", getCombinedAnalytics);
 
 export default router;

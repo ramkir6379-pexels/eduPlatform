@@ -154,3 +154,81 @@ export const getEmotionDistribution = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch emotion distribution" });
   }
 };
+
+
+export const getQuizPerformance = async (req: Request, res: Response) => {
+  try {
+    const { classId } = req.params;
+
+    const result = await pool.query(
+      `
+      SELECT 
+        AVG(ROUND((score::float / NULLIF(total_questions, 0) * 100)::numeric, 2)) as avg_score,
+        COUNT(*) as total_submissions,
+        COUNT(DISTINCT student_id) as unique_students
+      FROM quiz_submissions qs
+      JOIN quizzes q ON q.id = qs.quiz_id
+      WHERE q.class_id = $1
+      `,
+      [classId]
+    );
+
+    res.json(result.rows[0] || { avg_score: 0, total_submissions: 0, unique_students: 0 });
+  } catch (error) {
+    console.error("Error fetching quiz performance:", error);
+    res.status(500).json({ error: "Failed to fetch quiz performance" });
+  }
+};
+
+export const getCombinedAnalytics = async (req: Request, res: Response) => {
+  try {
+    const { classId, sessionId } = req.params;
+
+    // Get engagement data
+    const engagementResult = await pool.query(
+      `
+      SELECT AVG(engagement_score) as avg_engagement
+      FROM engagement_events
+      WHERE class_id = $1 AND session_id = $2
+      `,
+      [classId, sessionId]
+    );
+
+    // Get quiz performance
+    const quizResult = await pool.query(
+      `
+      SELECT 
+        AVG(ROUND((score::float / NULLIF(total_questions, 0) * 100)::numeric, 2)) as avg_score
+      FROM quiz_submissions qs
+      JOIN quizzes q ON q.id = qs.quiz_id
+      WHERE q.class_id = $1
+      `,
+      [classId]
+    );
+
+    const avgEngagement = engagementResult.rows[0]?.avg_engagement || 0;
+    const avgScore = quizResult.rows[0]?.avg_score || 0;
+
+    // Generate insight
+    let insight = "Class is performing well";
+
+    if (avgScore < 50 && avgEngagement < 0.5) {
+      insight = "Low engagement is affecting performance - intervention needed";
+    } else if (avgScore < 50) {
+      insight = "Quiz performance is low - review content";
+    } else if (avgEngagement < 0.5) {
+      insight = "Low engagement detected - increase interactivity";
+    } else if (avgScore > 80 && avgEngagement > 0.7) {
+      insight = "Excellent engagement and performance";
+    }
+
+    res.json({
+      avgEngagement: Math.round(avgEngagement * 100) / 100,
+      avgScore: Math.round(avgScore * 100) / 100,
+      insight,
+    });
+  } catch (error) {
+    console.error("Error fetching combined analytics:", error);
+    res.status(500).json({ error: "Failed to fetch combined analytics" });
+  }
+};
