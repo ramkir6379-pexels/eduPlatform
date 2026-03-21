@@ -2,6 +2,7 @@
 
 import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
+import ClassOverview from "@/components/ClassOverview";
 
 export default function AdminAnalyticsPage() {
   return (
@@ -14,7 +15,7 @@ export default function AdminAnalyticsPage() {
         <div className="p-8 bg-gray-50 min-h-screen">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Platform Analytics</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div className="bg-white rounded-xl shadow-md p-6">
               <h3 className="text-lg font-bold text-gray-800 mb-4">Attendance Overview</h3>
               <div className="space-y-3">
@@ -76,6 +77,12 @@ export default function AdminAnalyticsPage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* All Classes Overview */}
+          <div className="mb-8">
+            <h3 className="text-2xl font-bold text-gray-800 mb-6">All Classes Overview</h3>
+            <ClassOverview />
           </div>
         </div>
       </div>

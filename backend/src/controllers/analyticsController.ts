@@ -262,3 +262,28 @@ export const getStudentRanking = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch student ranking" });
   }
 };
+
+
+export const getAllClassAnalytics = async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT
+        c.id,
+        c.name,
+        AVG(e.engagement_score) as engagement,
+        COUNT(DISTINCT e.student_id) as student_count,
+        COUNT(e.id) as total_events
+      FROM classes c
+      LEFT JOIN engagement_events e ON c.id = e.class_id
+      GROUP BY c.id, c.name
+      ORDER BY COALESCE(AVG(e.engagement_score), 0) DESC
+      `
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching all class analytics:", error);
+    res.status(500).json({ error: "Failed to fetch class analytics" });
+  }
+};
