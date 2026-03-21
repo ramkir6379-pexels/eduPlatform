@@ -82,12 +82,25 @@ export const migrateDatabase = async () => {
     `);
     console.log("✓ Added total_questions column to quiz_submissions table");
 
-    // Add active_session_id to classes table for session management
+    // Create sessions table for live class sessions
     await pool.query(`
-      ALTER TABLE classes
-      ADD COLUMN IF NOT EXISTS active_session_id VARCHAR(100)
+      CREATE TABLE IF NOT EXISTS sessions (
+        id SERIAL PRIMARY KEY,
+        class_id INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+        session_id VARCHAR(100) NOT NULL UNIQUE,
+        is_live BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ended_at TIMESTAMP
+      )
     `);
-    console.log("✓ Added active_session_id column to classes table");
+    console.log("✓ Created sessions table");
+
+    // Add index for faster queries
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_sessions_class_live 
+      ON sessions(class_id, is_live)
+    `);
+    console.log("✓ Added index to sessions table");
 
     console.log("Database migrations completed successfully");
   } catch (error) {

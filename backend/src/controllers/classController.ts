@@ -213,3 +213,69 @@ export const endSession = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to end session" });
   }
 };
+
+export const getCurrentSession = async (req: Request, res: Response) => {
+  try {
+    const classId = req.params.id;
+
+    const result = await pool.query(
+      `SELECT session_id, is_live, created_at 
+       FROM sessions 
+       WHERE class_id = $1 AND is_live = true 
+       ORDER BY created_at DESC 
+       LIMIT 1`,
+      [classId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "No active session found" });
+    }
+
+    res.json({ session_id: result.rows[0].session_id });
+  } catch (error) {
+    console.error("Error fetching current session:", error);
+    res.status(500).json({ error: "Failed to fetch session" });
+  }
+};
+
+export const createNewSession = async (req: Request, res: Response) => {
+  try {
+    const classId = req.params.id;
+    const sessionId = `class-${classId}-${Date.now()}`;
+
+    // End any existing live sessions for this class
+    await pool.query(
+      "UPDATE sessions SET is_live = false, ended_at = CURRENT_TIMESTAMP WHERE class_id = $1 AND is_live = true",
+      [classId]
+    );
+
+    // Create new session
+    const result = await pool.query(
+      `INSERT INTO sessions (class_id, session_id, is_live) 
+       VALUES ($1, $2, true) 
+       RETURNING session_id`,
+      [classId, sessionId]
+    );
+
+    res.json({ session_id: result.rows[0].session_id });
+  } catch (error) {
+    console.error("Error creating session:", error);
+    res.status(500).json({ error: "Failed to create session" });
+  }
+};
+
+export const endCurrentSession = async (req: Request, res: Response) => {
+  try {
+    const classId = req.params.id;
+
+    await pool.query(
+      "UPDATE sessions SET is_live = false, ended_at = CURRENT_TIMESTAMP WHERE class_id = $1 AND is_live = true",
+      [classId]
+    );
+
+    res.json({ message: "Session ended successfully" });
+  } catch (error) {
+    console.error("Error ending session:", error);
+    res.status(500).json({ error: "Failed to end session" });
+  }
+};

@@ -70,8 +70,14 @@ function LiveClassContent() {
     }
   }, [classId]);
 
-  // Initialize camera and socket
+  // Initialize camera and socket ONLY after session is available
   useEffect(() => {
+    // Wait for session to be available
+    if (!sessionIdRef.current) {
+      console.log("Waiting for session ID...");
+      return;
+    }
+
     const initializeCall = async () => {
       try {
         // Guard against duplicate socket connections
@@ -91,16 +97,17 @@ function LiveClassContent() {
         console.log("Camera stream obtained:", stream);
         streamRef.current = stream;
 
-        // Attach to video element
-        const video = myVideoRef.current;
-        if (video) {
-          console.log("Attaching stream to video element");
-          video.srcObject = stream;
-        } else {
-          console.error("Video element not found!");
-          setError("Video element failed to mount");
-          return;
-        }
+        // Attach to video element with safe timing
+        setTimeout(() => {
+          const video = myVideoRef.current;
+          if (video) {
+            console.log("Attaching stream to video element");
+            video.srcObject = stream;
+          } else {
+            console.error("Video element still not mounted after delay");
+            setError("Video element failed to mount");
+          }
+        }, 500);
 
         // Initialize socket
         console.log("Connecting to socket...");
@@ -333,7 +340,7 @@ function LiveClassContent() {
   const endClass = () => {
     if (userRole === "teacher") {
       socketRef.current?.emit("class-ended", classId);
-      // Clear the session from database
+      // End the session in database
       fetch(`${API_URL}/api/classes/${classId}/session/end`, {
         method: "POST",
       }).catch((err) => console.error("Error ending session:", err));

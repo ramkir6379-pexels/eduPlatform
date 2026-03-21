@@ -11,6 +11,9 @@ import {
   startSession,
   getActiveSession,
   endSession,
+  getCurrentSession,
+  createNewSession,
+  endCurrentSession,
 } from "../controllers/classController";
 
 const router = express.Router();
@@ -19,9 +22,9 @@ const router = express.Router();
 router.get("/classes/teacher/:id", getTeacherClasses);
 router.get("/classes/student/:id", getStudentClasses);
 router.get("/classes/:id/students", getClassStudents);
-router.post("/classes/:id/session/start", startSession);
-router.get("/classes/:id/session", getActiveSession);
-router.post("/classes/:id/session/end", endSession);
+router.post("/classes/:id/session/start", createNewSession);
+router.get("/classes/:id/session", getCurrentSession);
+router.post("/classes/:id/session/end", endCurrentSession);
 router.get("/classes/:id", getClassById);
 router.delete("/classes/:id", deleteClass);
 router.post("/classes/enroll", enrollStudent);
