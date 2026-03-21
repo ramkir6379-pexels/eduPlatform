@@ -44,27 +44,20 @@ function LiveClassContent() {
   const [studentId, setStudentId] = useState<string>("");
   const [showAnalytics, setShowAnalytics] = useState(false);
 
-  // Generate session ID on component mount
+  // Fetch session ID on component mount
   useEffect(() => {
     const fetchSessionId = async () => {
       try {
         const response = await fetch(`${API_URL}/api/classes/${classId}/session`);
-        if (response.ok) {
-          const data = await response.json();
-          sessionIdRef.current = data.session_id;
-          console.log("Fetched session ID:", sessionIdRef.current);
-        } else {
-          console.error("Failed to fetch session ID, using fallback");
-          // Fallback: only teacher generates session
-          const userRole = localStorage.getItem("userRole") || "student";
-          if (userRole === "teacher") {
-            const sessionId = `class-${classId}-${Date.now()}`;
-            sessionIdRef.current = sessionId;
-            console.log("Generated new session ID (teacher):", sessionId);
-          }
+        if (!response.ok) {
+          throw new Error("Session not found");
         }
+        const data = await response.json();
+        sessionIdRef.current = data.session_id;
+        console.log("Fetched session ID:", sessionIdRef.current);
       } catch (error) {
         console.error("Error fetching session:", error);
+        setError("Failed to fetch active session. Please ensure teacher has started the class.");
       }
     };
 
@@ -81,6 +74,12 @@ function LiveClassContent() {
   useEffect(() => {
     const initializeCall = async () => {
       try {
+        // Guard against duplicate socket connections
+        if (socketRef.current) {
+          console.log("Socket already exists, skipping initialization...");
+          return;
+        }
+
         console.log("Starting camera initialization...");
 
         // Get user media
@@ -178,11 +177,17 @@ function LiveClassContent() {
 
         socketRef.current.on("signal", ({ from, data }: any) => {
           console.log("Signal received from:", from);
-          if (!peersRef.current.has(from)) {
+          let peer = peersRef.current.get(from);
+          if (!peer) {
             console.log("Creating peer from signal:", from);
             createPeerConnection(from, false, stream);
+            peer = peersRef.current.get(from);
           }
-          peersRef.current.get(from)?.signal(data);
+          if (peer && !peer.destroyed) {
+            peer.signal(data);
+          } else {
+            console.warn("Peer destroyed or not found, cannot signal:", from);
+          }
         });
 
         socketRef.current.on("user-left", (userId: string) => {
@@ -227,8 +232,16 @@ function LiveClassContent() {
     return () => {
       console.log("Cleaning up...");
       streamRef.current?.getTracks().forEach((track) => track.stop());
-      peersRef.current.forEach((peer) => peer.destroy());
+      peersRef.current.forEach((peer) => {
+        try {
+          peer.destroy();
+        } catch (err) {
+          console.error("Error destroying peer:", err);
+        }
+      });
+      peersRef.current.clear();
       socketRef.current?.disconnect();
+      socketRef.current = null;
     };
   }, [classId, userRole]);
 
