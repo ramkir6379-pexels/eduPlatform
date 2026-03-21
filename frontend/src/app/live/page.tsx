@@ -46,11 +46,29 @@ function LiveClassContent() {
 
   // Generate session ID on component mount
   useEffect(() => {
-    const now = new Date();
-    const dateStr = now.toISOString().split("T")[0].replace(/-/g, "");
-    const timeStr = now.toTimeString().split(" ")[0].replace(/:/g, "");
-    sessionIdRef.current = `class-${classId}-${dateStr}-${timeStr}`;
-    console.log("Session ID:", sessionIdRef.current);
+    const fetchSessionId = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/classes/${classId}/session`);
+        if (response.ok) {
+          const data = await response.json();
+          sessionIdRef.current = data.session_id;
+          console.log("Fetched session ID:", sessionIdRef.current);
+        } else {
+          console.error("Failed to fetch session ID, using fallback");
+          // Fallback: only teacher generates session
+          const userRole = localStorage.getItem("userRole") || "student";
+          if (userRole === "teacher") {
+            const sessionId = `class-${classId}-${Date.now()}`;
+            sessionIdRef.current = sessionId;
+            console.log("Generated new session ID (teacher):", sessionId);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching session:", error);
+      }
+    };
+
+    fetchSessionId();
 
     // Get student ID from localStorage
     const storedStudentId = localStorage.getItem("userId");
@@ -91,11 +109,46 @@ function LiveClassContent() {
 
         socketRef.current.on("connect", () => {
           console.log("Socket connected:", socketRef.current?.id);
-          socketRef.current?.emit("join-room", { 
-            classId, 
-            role: userRole,
-            sessionId: sessionIdRef.current 
-          });
+          
+          // If teacher, start a new session
+          if (userRole === "teacher") {
+            fetch(`${API_URL}/api/classes/${classId}/session/start`, {
+              method: "POST",
+            })
+              .then((res) => res.json())
+              .then((data) => {
+                sessionIdRef.current = data.session_id;
+                console.log("Teacher started session:", sessionIdRef.current);
+                socketRef.current?.emit("join-room", { 
+                  classId, 
+                  role: userRole,
+                  sessionId: sessionIdRef.current 
+                });
+              })
+              .catch((err) => {
+                console.error("Error starting session:", err);
+                socketRef.current?.emit("join-room", { 
+                  classId, 
+                  role: userRole,
+                  sessionId: sessionIdRef.current 
+                });
+              });
+          } else {
+            // Student waits for session to be available
+            const checkSession = setInterval(() => {
+              if (sessionIdRef.current) {
+                clearInterval(checkSession);
+                socketRef.current?.emit("join-room", { 
+                  classId, 
+                  role: userRole,
+                  sessionId: sessionIdRef.current 
+                });
+              }
+            }, 500);
+            
+            // Timeout after 10 seconds
+            setTimeout(() => clearInterval(checkSession), 10000);
+          }
         });
 
         socketRef.current.on("user-joined", (data: any) => {
@@ -247,6 +300,10 @@ function LiveClassContent() {
   const endClass = () => {
     if (userRole === "teacher") {
       socketRef.current?.emit("class-ended", classId);
+      // Clear the session from database
+      fetch(`${API_URL}/api/classes/${classId}/session/end`, {
+        method: "POST",
+      }).catch((err) => console.error("Error ending session:", err));
       alert("Class ended");
     }
     leaveClass();

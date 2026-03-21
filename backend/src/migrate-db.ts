@@ -82,6 +82,13 @@ export const migrateDatabase = async () => {
     `);
     console.log("✓ Added total_questions column to quiz_submissions table");
 
+    // Add active_session_id to classes table for session management
+    await pool.query(`
+      ALTER TABLE classes
+      ADD COLUMN IF NOT EXISTS active_session_id VARCHAR(100)
+    `);
+    console.log("✓ Added active_session_id column to classes table");
+
     console.log("Database migrations completed successfully");
   } catch (error) {
     console.error("Error running migrations:", error);

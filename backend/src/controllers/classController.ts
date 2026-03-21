@@ -151,3 +151,65 @@ export const getClassStudents = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch students" });
   }
 };
+
+export const startSession = async (req: Request, res: Response) => {
+  try {
+    const classId = req.params.id;
+    const sessionId = `class-${classId}-${Date.now()}`;
+
+    const result = await pool.query(
+      "UPDATE classes SET active_session_id = $1 WHERE id = $2 RETURNING active_session_id",
+      [sessionId, classId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Class not found" });
+    }
+
+    res.json({ session_id: result.rows[0].active_session_id });
+  } catch (error) {
+    console.error("Error starting session:", error);
+    res.status(500).json({ error: "Failed to start session" });
+  }
+};
+
+export const getActiveSession = async (req: Request, res: Response) => {
+  try {
+    const classId = req.params.id;
+
+    const result = await pool.query(
+      "SELECT active_session_id FROM classes WHERE id = $1",
+      [classId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Class not found" });
+    }
+
+    const sessionId = result.rows[0].active_session_id;
+    if (!sessionId) {
+      return res.status(404).json({ error: "No active session for this class" });
+    }
+
+    res.json({ session_id: sessionId });
+  } catch (error) {
+    console.error("Error fetching active session:", error);
+    res.status(500).json({ error: "Failed to fetch session" });
+  }
+};
+
+export const endSession = async (req: Request, res: Response) => {
+  try {
+    const classId = req.params.id;
+
+    await pool.query(
+      "UPDATE classes SET active_session_id = NULL WHERE id = $1",
+      [classId]
+    );
+
+    res.json({ message: "Session ended successfully" });
+  } catch (error) {
+    console.error("Error ending session:", error);
+    res.status(500).json({ error: "Failed to end session" });
+  }
+};
