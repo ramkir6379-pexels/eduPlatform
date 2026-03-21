@@ -65,6 +65,8 @@ export default function LiveQuiz({
       return;
     }
 
+    console.log("Creating quiz with session_id:", sessionId);
+
     try {
       const response = await fetch(`${API_URL}/api/live-quiz/create`, {
         method: "POST",
