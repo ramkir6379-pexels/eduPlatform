@@ -88,6 +88,12 @@ const startServer = async () => {
       socket.to(roomId).emit("user-joined", { id: socket.id, role: userRole });
     });
 
+    socket.on("join_session", (sessionId: string) => {
+      console.log(`${socket.id} joining session ${sessionId}`);
+      socket.join(sessionId);
+      console.log(`${socket.id} successfully joined session room ${sessionId}`);
+    });
+
     socket.on("signal", ({ target, data }: any) => {
       io.to(target).emit("signal", { data, from: socket.id });
     });

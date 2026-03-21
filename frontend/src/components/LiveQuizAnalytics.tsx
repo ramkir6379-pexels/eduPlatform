@@ -50,7 +50,7 @@ export default function LiveQuizAnalytics({ sessionId }: LiveQuizAnalyticsProps)
 
     socketInstance.on("connect", () => {
       console.log("Analytics socket connected");
-      socketInstance.join(sessionId);
+      socketInstance.emit("join_session", sessionId);
     });
 
     // Listen for quiz analytics updates
