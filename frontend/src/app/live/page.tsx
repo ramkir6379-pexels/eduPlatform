@@ -113,159 +113,154 @@ function LiveClassContent() {
     }
   }, [classId]);
 
-  // Initialize socket (after camera is ready)
+  // Initialize socket (only once on mount)
   useEffect(() => {
-    // Wait for camera stream to be available
-    if (!streamRef.current) {
-      console.log("Waiting for camera stream...");
+    if (socketRef.current) {
+      console.log("Socket already initialized, skipping...");
       return;
     }
 
-    const initializeSocket = async () => {
-      try {
-        // Guard against duplicate socket connections
-        if (socketRef.current) {
-          console.log("Socket already exists, skipping initialization...");
-          return;
-        }
+    console.log("🚀 Initializing socket...");
+    
+    try {
+      const socket = io(SOCKET_URL, {
+        transports: ["websocket"],
+      });
 
-        console.log("Connecting to socket...");
-        socketRef.current = io(SOCKET_URL);
-        const stream = streamRef.current;
+      socketRef.current = socket;
 
-        socketRef.current.on("connect", () => {
-          console.log("Socket connected:", socketRef.current?.id);
-          console.log("User role:", userRole);
-          
-          // If teacher, start a new session
-          if (userRole === "teacher") {
-            console.log("Teacher detected - starting session...");
-            fetch(`${API_URL}/api/classes/${classId}/session/start`, {
-              method: "POST",
-            })
-              .then((res) => res.json())
-              .then((data) => {
-                sessionIdRef.current = data.session_id;
-                console.log("Teacher started session:", sessionIdRef.current);
-                socketRef.current?.emit("join-room", { 
-                  classId, 
-                  role: userRole,
-                  sessionId: sessionIdRef.current 
-                });
-              })
-              .catch((err) => {
-                console.error("Error starting session:", err);
-                socketRef.current?.emit("join-room", { 
-                  classId, 
-                  role: userRole,
-                  sessionId: sessionIdRef.current 
-                });
+      socket.on("connect", () => {
+        console.log("✅ Socket connected:", socket.id);
+        console.log("User role:", userRole);
+        
+        // If teacher, start a new session
+        if (userRole === "teacher") {
+          console.log("Teacher detected - starting session...");
+          fetch(`${API_URL}/api/classes/${classId}/session/start`, {
+            method: "POST",
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              sessionIdRef.current = data.session_id;
+              console.log("Teacher started session:", sessionIdRef.current);
+              socket.emit("join-room", { 
+                classId, 
+                role: userRole,
+                sessionId: sessionIdRef.current 
               });
-          } else {
-            // Student waits for session to be available
-            const checkSession = setInterval(() => {
-              if (sessionIdRef.current) {
-                clearInterval(checkSession);
-                socketRef.current?.emit("join-room", { 
-                  classId, 
-                  role: userRole,
-                  sessionId: sessionIdRef.current 
-                });
-              }
-            }, 500);
-            
-            // Timeout after 10 seconds
-            setTimeout(() => clearInterval(checkSession), 10000);
-          }
-        });
-
-        socketRef.current.on("user-joined", (data: any) => {
-          console.log("User joined:", data);
-          const userId = typeof data === "string" ? data : data.id;
-          const role = typeof data === "string" ? "student" : data.role;
-
-          // Add to participants list
-          setParticipants((prev) => [
-            ...prev,
-            { id: userId, role: role || "student" },
-          ]);
-
-          // Create peer connection
-          if (stream) {
-            createPeerConnection(userId, true, stream);
-          }
-        });
-
-        socketRef.current.on("existing-users", (users: string[]) => {
-          console.log("Existing users:", users);
-          users.forEach((userId) => {
-            if (!peersRef.current.has(userId)) {
-              console.log("Creating peer for existing user:", userId);
-              if (stream) {
-                createPeerConnection(userId, true, stream);
-              }
+            })
+            .catch((err) => {
+              console.error("Error starting session:", err);
+              socket.emit("join-room", { 
+                classId, 
+                role: userRole,
+                sessionId: sessionIdRef.current 
+              });
+            });
+        } else {
+          // Student waits for session to be available
+          const checkSession = setInterval(() => {
+            if (sessionIdRef.current) {
+              clearInterval(checkSession);
+              socket.emit("join-room", { 
+                classId, 
+                role: userRole,
+                sessionId: sessionIdRef.current 
+              });
             }
-          });
-        });
+          }, 500);
+          
+          // Timeout after 10 seconds
+          setTimeout(() => clearInterval(checkSession), 10000);
+        }
+      });
 
-        socketRef.current.on("signal", ({ from, data }: any) => {
-          console.log("Signal received from:", from);
-          let peer = peersRef.current.get(from);
-          if (!peer) {
-            console.log("Creating peer from signal:", from);
-            if (stream) {
-              createPeerConnection(from, false, stream);
-              peer = peersRef.current.get(from);
+      socket.on("user-joined", (data: any) => {
+        console.log("User joined:", data);
+        const userId = typeof data === "string" ? data : data.id;
+        const role = typeof data === "string" ? "student" : data.role;
+
+        // Add to participants list
+        setParticipants((prev) => [
+          ...prev,
+          { id: userId, role: role || "student" },
+        ]);
+
+        // Create peer connection
+        if (streamRef.current) {
+          createPeerConnection(userId, true, streamRef.current);
+        }
+      });
+
+      socket.on("existing-users", (users: string[]) => {
+        console.log("Existing users:", users);
+        users.forEach((userId) => {
+          if (!peersRef.current.has(userId)) {
+            console.log("Creating peer for existing user:", userId);
+            if (streamRef.current) {
+              createPeerConnection(userId, true, streamRef.current);
             }
           }
-          if (peer && !peer.destroyed) {
-            peer.signal(data);
-          } else {
-            console.warn("Peer destroyed or not found, cannot signal:", from);
+        });
+      });
+
+      socket.on("signal", ({ from, data }: any) => {
+        console.log("Signal received from:", from);
+        let peer = peersRef.current.get(from);
+        if (!peer) {
+          console.log("Creating peer from signal:", from);
+          if (streamRef.current) {
+            createPeerConnection(from, false, streamRef.current);
+            peer = peersRef.current.get(from);
           }
-        });
+        }
+        if (peer && !peer.destroyed) {
+          peer.signal(data);
+        } else {
+          console.warn("Peer destroyed or not found, cannot signal:", from);
+        }
+      });
 
-        socketRef.current.on("user-left", (userId: string) => {
-          console.log("User left:", userId);
-          if (peersRef.current.has(userId)) {
-            peersRef.current.get(userId).destroy();
-            peersRef.current.delete(userId);
-          }
-          setRemoteUsers((prev) => prev.filter((u) => u.id !== userId));
-          setParticipants((prev) => prev.filter((p) => p.id !== userId));
-        });
+      socket.on("user-left", (userId: string) => {
+        console.log("User left:", userId);
+        if (peersRef.current.has(userId)) {
+          peersRef.current.get(userId).destroy();
+          peersRef.current.delete(userId);
+        }
+        setRemoteUsers((prev) => prev.filter((u) => u.id !== userId));
+        setParticipants((prev) => prev.filter((p) => p.id !== userId));
+      });
 
-        socketRef.current.on("class-ended", () => {
-          console.log("Class ended by teacher");
-          alert("Class ended by teacher");
-          leaveClass();
-        });
+      socket.on("class-ended", () => {
+        console.log("Class ended by teacher");
+        alert("Class ended by teacher");
+        leaveClass();
+      });
 
-        socketRef.current.on("quiz_analytics_update", () => {
-          console.log("Quiz analytics updated, fetching latest...");
-          // Trigger analytics refresh if teacher
-          if (userRole === "teacher") {
-            // This will be handled by the LiveQuizAnalytics component polling
-            console.log("Analytics update received");
-          }
-        });
+      socket.on("quiz_analytics_update", () => {
+        console.log("Quiz analytics updated, fetching latest...");
+        if (userRole === "teacher") {
+          console.log("Analytics update received");
+        }
+      });
 
-        // Add self to participants
-        setParticipants([{ id: socketRef.current?.id || "you", role: userRole as "teacher" | "student" }]);
-        setIsLoading(false);
-      } catch (err) {
-        console.error("Error initializing socket:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to connect to socket"
-        );
-        setIsLoading(false);
-      }
-    };
+      socket.on("disconnect", () => {
+        console.log("❌ Socket disconnected");
+      });
 
-    initializeSocket();
+      // Add self to participants
+      setParticipants([{ id: socket.id || "you", role: userRole as "teacher" | "student" }]);
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Error initializing socket:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to connect to socket"
+      );
+      setIsLoading(false);
+    }
 
     return () => {
-      console.log("Cleaning up socket...");
+      console.log("Cleaning up socket on unmount...");
       peersRef.current.forEach((peer) => {
         try {
           peer.destroy();
@@ -277,7 +272,7 @@ function LiveClassContent() {
       socketRef.current?.disconnect();
       socketRef.current = null;
     };
-  }, [classId, userRole]);
+  }, []);
 
   // Frame capture interval (only for students)
   useEffect(() => {
