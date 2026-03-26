@@ -52,7 +52,42 @@ function LiveClassContent() {
   const [studentId, setStudentId] = useState<string>("");
   const [showAnalytics, setShowAnalytics] = useState(false);
 
-  // Fetch session ID on component mount
+  // Initialize camera FIRST (immediately on mount)
+  useEffect(() => {
+    const initCamera = async () => {
+      try {
+        console.log("🚀 Starting camera...");
+        
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: true,
+        });
+
+        console.log("✅ Camera started");
+        streamRef.current = stream;
+
+        // Attach to video element immediately
+        if (myVideoRef.current) {
+          console.log("Attaching stream to video element");
+          myVideoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.error("❌ Camera error:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to access camera/microphone"
+        );
+      }
+    };
+
+    // Call camera init immediately
+    initCamera();
+
+    return () => {
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
+
+  // Fetch session ID and initialize socket (can happen in parallel)
   useEffect(() => {
     const fetchSessionId = async () => {
       try {
@@ -78,15 +113,15 @@ function LiveClassContent() {
     }
   }, [classId]);
 
-  // Initialize camera and socket ONLY after session is available
+  // Initialize socket (after camera is ready)
   useEffect(() => {
-    // Wait for session to be available
-    if (!sessionIdRef.current) {
-      console.log("Waiting for session ID...");
+    // Wait for camera stream to be available
+    if (!streamRef.current) {
+      console.log("Waiting for camera stream...");
       return;
     }
 
-    const initializeCall = async () => {
+    const initializeSocket = async () => {
       try {
         // Guard against duplicate socket connections
         if (socketRef.current) {
@@ -94,32 +129,9 @@ function LiveClassContent() {
           return;
         }
 
-        console.log("Starting camera initialization...");
-
-        // Get user media
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: true,
-        });
-
-        console.log("Camera stream obtained:", stream);
-        streamRef.current = stream;
-
-        // Attach to video element with safe timing
-        setTimeout(() => {
-          const video = myVideoRef.current;
-          if (video) {
-            console.log("Attaching stream to video element");
-            video.srcObject = stream;
-          } else {
-            console.error("Video element still not mounted after delay");
-            setError("Video element failed to mount");
-          }
-        }, 500);
-
-        // Initialize socket
         console.log("Connecting to socket...");
         socketRef.current = io(SOCKET_URL);
+        const stream = streamRef.current;
 
         socketRef.current.on("connect", () => {
           console.log("Socket connected:", socketRef.current?.id);
@@ -179,7 +191,9 @@ function LiveClassContent() {
           ]);
 
           // Create peer connection
-          createPeerConnection(userId, true, stream);
+          if (stream) {
+            createPeerConnection(userId, true, stream);
+          }
         });
 
         socketRef.current.on("existing-users", (users: string[]) => {
@@ -187,7 +201,9 @@ function LiveClassContent() {
           users.forEach((userId) => {
             if (!peersRef.current.has(userId)) {
               console.log("Creating peer for existing user:", userId);
-              createPeerConnection(userId, true, stream);
+              if (stream) {
+                createPeerConnection(userId, true, stream);
+              }
             }
           });
         });
@@ -197,8 +213,10 @@ function LiveClassContent() {
           let peer = peersRef.current.get(from);
           if (!peer) {
             console.log("Creating peer from signal:", from);
-            createPeerConnection(from, false, stream);
-            peer = peersRef.current.get(from);
+            if (stream) {
+              createPeerConnection(from, false, stream);
+              peer = peersRef.current.get(from);
+            }
           }
           if (peer && !peer.destroyed) {
             peer.signal(data);
@@ -236,19 +254,18 @@ function LiveClassContent() {
         setParticipants([{ id: socketRef.current?.id || "you", role: userRole as "teacher" | "student" }]);
         setIsLoading(false);
       } catch (err) {
-        console.error("Error initializing call:", err);
+        console.error("Error initializing socket:", err);
         setError(
-          err instanceof Error ? err.message : "Failed to access camera/microphone"
+          err instanceof Error ? err.message : "Failed to connect to socket"
         );
         setIsLoading(false);
       }
     };
 
-    initializeCall();
+    initializeSocket();
 
     return () => {
-      console.log("Cleaning up...");
-      streamRef.current?.getTracks().forEach((track) => track.stop());
+      console.log("Cleaning up socket...");
       peersRef.current.forEach((peer) => {
         try {
           peer.destroy();
