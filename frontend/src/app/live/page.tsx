@@ -123,9 +123,11 @@ function LiveClassContent() {
 
         socketRef.current.on("connect", () => {
           console.log("Socket connected:", socketRef.current?.id);
+          console.log("User role:", userRole);
           
           // If teacher, start a new session
           if (userRole === "teacher") {
+            console.log("Teacher detected - starting session...");
             fetch(`${API_URL}/api/classes/${classId}/session/start`, {
               method: "POST",
             })
@@ -366,7 +368,7 @@ function LiveClassContent() {
       return;
     }
 
-    console.log("Student ID:", studentId);
+    console.log("Capturing frame - Student ID:", studentId, "Session ID:", sessionIdRef.current);
 
     const canvas = document.createElement("canvas");
     canvas.width = videoElement.videoWidth;
@@ -375,16 +377,33 @@ function LiveClassContent() {
     if (!ctx) return;
     ctx.drawImage(videoElement, 0, 0);
     canvas.toBlob((blob) => {
-      if (!blob) return;
+      if (!blob) {
+        console.error("Failed to create blob from canvas");
+        return;
+      }
+      
+      console.log("Frame blob created, sending to backend...");
+      
       const formData = new FormData();
       formData.append("frame", blob);
       formData.append("class_id", classId);
       formData.append("student_id", studentId);
       formData.append("session_id", sessionIdRef.current);
+      
       fetch(`${API_URL}/api/engagement/frame`, {
         method: "POST",
         body: formData,
-      });
+      })
+        .then((res) => {
+          console.log("Frame sent - Response status:", res.status);
+          return res.json();
+        })
+        .then((data) => {
+          console.log("Frame response:", data);
+        })
+        .catch((error) => {
+          console.error("Error sending frame:", error);
+        });
     }, "image/jpeg", 0.7);
   };
 
