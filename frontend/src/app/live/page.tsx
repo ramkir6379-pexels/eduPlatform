@@ -188,12 +188,13 @@ function LiveClassContent() {
           { id: userId, role: role || "student" },
         ]);
 
-        // Create peer connection
-        if (streamRef.current) {
-          const isInitiator = userRole === "teacher";
+        // ONLY teacher creates peer immediately
+        if (userRole === "teacher" && streamRef.current) {
+          const isInitiator = true;
           console.log("ROLE:", userRole, "→ initiator:", isInitiator);
           createPeerConnection(userId, isInitiator, streamRef.current);
         }
+        // Student does NOT create peer here - waits for signal
       });
 
       socket.on("existing-users", (users: string[]) => {
@@ -201,11 +202,13 @@ function LiveClassContent() {
         users.forEach((userId) => {
           if (!peersRef.current.has(userId)) {
             console.log("Creating peer for existing user:", userId);
-            if (streamRef.current) {
-              const isInitiator = userRole === "teacher";
+            // ONLY teacher creates peer immediately
+            if (userRole === "teacher" && streamRef.current) {
+              const isInitiator = true;
               console.log("ROLE:", userRole, "→ initiator:", isInitiator);
               createPeerConnection(userId, isInitiator, streamRef.current);
             }
+            // Student does NOT create peer here - waits for signal
           }
         });
       });
@@ -224,12 +227,6 @@ function LiveClassContent() {
         
         if (!peer) {
           console.error("❌ Peer missing");
-          return;
-        }
-        
-        // Check for duplicate offer when already stable
-        if (peer._pc?.signalingState === "stable" && data.type === "offer") {
-          console.warn("⚠️ Ignoring duplicate offer (already stable)");
           return;
         }
         
