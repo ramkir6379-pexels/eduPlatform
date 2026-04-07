@@ -64,6 +64,8 @@ function LiveClassContent() {
         });
 
         console.log("✅ Camera started");
+        console.log("Local audio tracks:", stream.getAudioTracks());
+        console.log("Local audio track enabled:", stream.getAudioTracks()[0]?.enabled);
         streamRef.current = stream;
 
         // Attach to video element immediately
@@ -318,6 +320,8 @@ function LiveClassContent() {
     peer.on("stream", (remoteStream: MediaStream) => {
       if (!remoteStream) return;
       console.log("Received remote stream from:", userId);
+      console.log("Remote audio tracks:", remoteStream.getAudioTracks());
+      console.log("Remote audio track enabled:", remoteStream.getAudioTracks()[0]?.enabled);
       setRemoteUsers((prev) => {
         const existing = prev.find((u) => u.id === userId);
         if (existing) {
@@ -612,6 +616,14 @@ function RemoteVideoStream({
     if (videoRef.current && user.stream) {
       console.log("Attaching remote stream:", user.id);
       videoRef.current.srcObject = user.stream;
+      
+      // Force playback to unlock audio (browsers block audio autoplay)
+      videoRef.current.onloadedmetadata = () => {
+        videoRef.current?.play()
+          .then(() => console.log("✅ Playback started for:", user.id))
+          .catch(err => console.error("❌ Playback failed for:", user.id, err));
+      };
+      
       setHasStream(true);
     } else {
       setHasStream(false);
