@@ -619,29 +619,23 @@ function RemoteVideoStream({
   role: "teacher" | "student";
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [hasStream, setHasStream] = useState(false);
 
   useEffect(() => {
     if (videoRef.current && user.stream) {
-      console.log("Attaching remote stream:", user.id);
+      console.log("✅ Attaching remote stream:", user.id);
       videoRef.current.srcObject = user.stream;
       
       // Force playback to unlock audio (browsers block audio autoplay)
       videoRef.current.onloadedmetadata = () => {
         videoRef.current?.play()
-          .then(() => console.log("✅ Playback started for:", user.id))
           .catch(err => console.error("❌ Playback failed for:", user.id, err));
       };
-      
-      setHasStream(true);
-    } else {
-      setHasStream(false);
     }
-  }, [user.stream]);
+  }, [user.stream, user.id]);
 
   return (
     <div className="bg-black rounded-lg overflow-hidden relative flex items-center justify-center">
-      {hasStream ? (
+      {user.stream ? (
         <video
           ref={videoRef}
           autoPlay
