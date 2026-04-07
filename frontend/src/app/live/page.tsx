@@ -215,7 +215,7 @@ function LiveClassContent() {
         
         let peer = peersRef.current.get(from);
         if (!peer) {
-          console.log("⚠️ Peer not found → creating new peer");
+          console.log("⚠️ Creating peer from signal");
           if (streamRef.current) {
             createPeerConnection(from, false, streamRef.current);
             peer = peersRef.current.get(from);
@@ -223,26 +223,23 @@ function LiveClassContent() {
         }
         
         if (!peer) {
-          console.error("❌ Peer still not found after creation");
+          console.error("❌ Peer missing");
           return;
         }
         
-        if (peer.destroyed) {
-          console.warn("❌ Peer destroyed, skipping signal");
+        // Check for duplicate offer when already stable
+        if (peer._pc?.signalingState === "stable" && data.type === "offer") {
+          console.warn("⚠️ Ignoring duplicate offer (already stable)");
           return;
         }
         
-        // CRITICAL FIX: Ignore signals after connection is stable
-        if (peer._pc?.signalingState === "stable") {
-          console.warn("⚠️ Ignoring extra signal (already stable):", from, "state:", peer._pc?.signalingState);
-          return;
-        }
+        console.log("Peer state BEFORE:", peer._pc?.signalingState);
         
-        console.log("📡 Passing signal to peer:", data.type);
         try {
           peer.signal(data);
+          console.log("✅ peer.signal() called");
         } catch (err) {
-          console.error("❌ peer.signal() failed:", err);
+          console.error("❌ peer.signal failed:", err);
         }
       });
 
