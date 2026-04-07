@@ -51,6 +51,7 @@ function LiveClassContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [studentId, setStudentId] = useState<string>("");
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [myId, setMyId] = useState<string>("");
 
   // Initialize camera FIRST (immediately on mount)
   useEffect(() => {
@@ -134,6 +135,9 @@ function LiveClassContent() {
       socket.on("connect", () => {
         console.log("✅ Socket connected:", socket.id);
         console.log("User role:", userRole);
+        if (socket.id) {
+          setMyId(socket.id);
+        }
         
         // If teacher, start a new session
         if (userRole === "teacher") {
@@ -182,11 +186,12 @@ function LiveClassContent() {
         const userId = typeof data === "string" ? data : data.id;
         const role = typeof data === "string" ? "student" : data.role;
 
-        // Add to participants list
-        setParticipants((prev) => [
-          ...prev,
-          { id: userId, role: role || "student" },
-        ]);
+        // Add to participants list with deduplication
+        setParticipants((prev) => {
+          const exists = prev.find((u) => u.id === userId);
+          if (exists) return prev;
+          return [...prev, { id: userId, role: role || "student" }];
+        });
 
         // ONLY teacher creates peer immediately
         if (userRole === "teacher" && streamRef.current) {
@@ -202,6 +207,13 @@ function LiveClassContent() {
         users.forEach((userId) => {
           if (!peersRef.current.has(userId)) {
             console.log("Creating peer for existing user:", userId);
+            // Add to participants with role (default to student for existing users)
+            setParticipants((prev) => {
+              const exists = prev.find((u) => u.id === userId);
+              if (exists) return prev;
+              return [...prev, { id: userId, role: "student" }];
+            });
+            
             // ONLY teacher creates peer immediately
             if (userRole === "teacher" && streamRef.current) {
               const isInitiator = true;
@@ -247,7 +259,7 @@ function LiveClassContent() {
           peersRef.current.delete(userId);
         }
         setRemoteUsers((prev) => prev.filter((u) => u.id !== userId));
-        setParticipants((prev) => prev.filter((p) => p.id !== userId));
+        setParticipants((prev) => prev.filter((u) => u.id !== userId));
       });
 
       socket.on("class-ended", () => {
@@ -520,7 +532,7 @@ function LiveClassContent() {
                 </div>
               )}
               <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-sm font-semibold">
-                {userRole === "teacher" ? "👨‍🏫 Teacher" : "👨‍🎓 You"}
+                {userRole === "teacher" ? "👨‍🏫 Teacher (You)" : "👨‍🎓 You"}
               </div>
             </div>
 
