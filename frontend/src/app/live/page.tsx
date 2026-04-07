@@ -188,9 +188,9 @@ function LiveClassContent() {
           { id: userId, role: role || "student" },
         ]);
 
-        // Create peer connection
+        // Create peer connection - ONLY teacher is initiator
         if (streamRef.current) {
-          createPeerConnection(userId, true, streamRef.current);
+          createPeerConnection(userId, userRole === "teacher", streamRef.current);
         }
       });
 
@@ -199,8 +199,9 @@ function LiveClassContent() {
         users.forEach((userId) => {
           if (!peersRef.current.has(userId)) {
             console.log("Creating peer for existing user:", userId);
+            // ONLY teacher is initiator
             if (streamRef.current) {
-              createPeerConnection(userId, true, streamRef.current);
+              createPeerConnection(userId, userRole === "teacher", streamRef.current);
             }
           }
         });
