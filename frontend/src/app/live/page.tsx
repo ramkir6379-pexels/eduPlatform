@@ -308,6 +308,7 @@ function LiveClassContent() {
       return;
     }
 
+    console.log("ROLE:", userRole, "→ initiator:", initiator);
     console.log("🟢 Creating peer:", userId, "initiator:", initiator);
 
     const peer = new Peer({
