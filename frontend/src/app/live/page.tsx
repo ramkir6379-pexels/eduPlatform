@@ -213,14 +213,22 @@ function LiveClassContent() {
         const peer = peersRef.current.get(from);
         if (!peer) {
           console.warn("⚠️ Peer not ready yet for:", from, "- ignoring signal");
-          return; // DO NOTHING - peer should already exist
+          return;
         }
         
-        if (!peer.destroyed) {
-          peer.signal(data);
-        } else {
+        if (peer.destroyed) {
           console.warn("❌ Peer destroyed:", from);
+          return;
         }
+        
+        // CRITICAL FIX: Ignore signals after connection is stable
+        if (peer._pc?.signalingState === "stable") {
+          console.warn("⚠️ Ignoring extra signal (already stable):", from, "state:", peer._pc?.signalingState);
+          return;
+        }
+        
+        console.log("State before signal:", peer._pc?.signalingState);
+        peer.signal(data);
       });
 
       socket.on("user-left", (userId: string) => {
@@ -314,6 +322,7 @@ function LiveClassContent() {
     });
 
     peer.on("signal", (data) => {
+      console.log("🔊 Sending signal to:", userId, "type:", data.type);
       socketRef.current?.emit("signal", { target: userId, data });
     });
 
