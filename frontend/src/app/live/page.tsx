@@ -211,17 +211,24 @@ function LiveClassContent() {
       });
 
       socket.on("signal", ({ from, data }: any) => {
-        console.log("📩 Signal received from:", from);
-        console.log("Peer exists:", peersRef.current.has(from));
+        console.log("📩 Signal received from:", from, "type:", data.type);
         
-        const peer = peersRef.current.get(from);
+        let peer = peersRef.current.get(from);
         if (!peer) {
-          console.warn("⚠️ Peer not ready yet for:", from, "- ignoring signal");
+          console.log("⚠️ Peer not found → creating new peer");
+          if (streamRef.current) {
+            createPeerConnection(from, false, streamRef.current);
+            peer = peersRef.current.get(from);
+          }
+        }
+        
+        if (!peer) {
+          console.error("❌ Peer still not found after creation");
           return;
         }
         
         if (peer.destroyed) {
-          console.warn("❌ Peer destroyed:", from);
+          console.warn("❌ Peer destroyed, skipping signal");
           return;
         }
         
@@ -231,8 +238,12 @@ function LiveClassContent() {
           return;
         }
         
-        console.log("State before signal:", peer._pc?.signalingState);
-        peer.signal(data);
+        console.log("📡 Passing signal to peer:", data.type);
+        try {
+          peer.signal(data);
+        } catch (err) {
+          console.error("❌ peer.signal() failed:", err);
+        }
       });
 
       socket.on("user-left", (userId: string) => {
@@ -329,6 +340,10 @@ function LiveClassContent() {
     peer.on("signal", (data) => {
       console.log("🔊 Sending signal to:", userId, "type:", data.type);
       socketRef.current?.emit("signal", { target: userId, data });
+    });
+
+    peer.on("connect", () => {
+      console.log("✅ Peer CONNECTED:", userId);
     });
 
     peer.on("stream", (remoteStream: MediaStream) => {
