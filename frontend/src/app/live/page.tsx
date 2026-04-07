@@ -207,19 +207,19 @@ function LiveClassContent() {
       });
 
       socket.on("signal", ({ from, data }: any) => {
-        console.log("Signal received from:", from);
-        let peer = peersRef.current.get(from);
+        console.log("📩 Signal received from:", from);
+        console.log("Peer exists:", peersRef.current.has(from));
+        
+        const peer = peersRef.current.get(from);
         if (!peer) {
-          console.log("Creating peer from signal:", from);
-          if (streamRef.current) {
-            createPeerConnection(from, false, streamRef.current);
-            peer = peersRef.current.get(from);
-          }
+          console.warn("⚠️ Peer not ready yet for:", from, "- ignoring signal");
+          return; // DO NOTHING - peer should already exist
         }
-        if (peer && !peer.destroyed) {
+        
+        if (!peer.destroyed) {
           peer.signal(data);
         } else {
-          console.warn("Peer destroyed or not found, cannot signal:", from);
+          console.warn("❌ Peer destroyed:", from);
         }
       });
 
@@ -295,11 +295,11 @@ function LiveClassContent() {
   ) => {
     // Guard against duplicate peers
     if (peersRef.current.has(userId)) {
-      console.log("Peer already exists for:", userId);
+      console.log("🔴 Peer already exists for:", userId);
       return;
     }
 
-    console.log("Creating peer:", userId, "initiator:", initiator);
+    console.log("🟢 Creating peer:", userId, "initiator:", initiator);
 
     const peer = new Peer({
       initiator,
