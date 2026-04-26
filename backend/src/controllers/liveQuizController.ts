@@ -25,11 +25,11 @@ export const createLiveQuiz = async (req: Request, res: Response) => {
     // Insert live quiz
     const result = await pool.query(
       `
-      INSERT INTO quizzes (title, description, is_live, class_id, teacher_id, created_at)
-      VALUES ($1, $2, true, $3, $4, CURRENT_TIMESTAMP)
+      INSERT INTO quizzes (title, description, is_live, class_id, teacher_id, session_id, created_at)
+      VALUES ($1, $2, true, $3, $4, $5, CURRENT_TIMESTAMP)
       RETURNING id, title, created_at
       `,
-      [question, JSON.stringify(options), class_id || null, teacher_id]
+      [question, JSON.stringify(options), class_id || null, teacher_id, session_id]
     );
 
     const quizId = result.rows[0].id;
