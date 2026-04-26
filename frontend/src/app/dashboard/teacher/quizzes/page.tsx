@@ -65,8 +65,8 @@ export default function TeacherQuizzesPage() {
 
   const filteredQuizzes = quizzes
     .filter((quiz) => {
-      if (tab === "bank") return !quiz.is_live;
-      if (tab === "live") return quiz.is_live;
+      if (tab === "bank") return quiz.is_live !== true;
+      if (tab === "live") return quiz.is_live === true;
       return true;
     })
     .filter((quiz) =>

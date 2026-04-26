@@ -244,18 +244,21 @@ export const getTeacherQuizzes = async (req: Request, res: Response) => {
         q.title,
         q.description,
         q.class_id,
+        COALESCE(q.is_live, false) AS is_live,
+        q.session_id,
         c.name AS class_name,
         COALESCE(
-          (SELECT COUNT(*)::int
+          (
+            SELECT COUNT(*)::int
             FROM questions
-            WHERE quiz_id = q.id),
+            WHERE quiz_id = q.id
+          ),
           0
         ) AS question_count,
         q.created_at
       FROM quizzes q
       LEFT JOIN classes c ON q.class_id = c.id
       WHERE q.teacher_id = $1
-        AND COALESCE(q.is_live, false) = false
       ORDER BY q.created_at DESC
       `,
       [teacher_id]
