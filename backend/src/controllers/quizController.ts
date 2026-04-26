@@ -239,27 +239,49 @@ export const getTeacherQuizzes = async (req: Request, res: Response) => {
 
     const result = await pool.query(
       `
-      SELECT
-        q.id,
-        q.title,
-        q.description,
-        q.class_id,
-        COALESCE(q.is_live, false) AS is_live,
-        q.session_id,
-        c.name AS class_name,
-        COALESCE(
-          (
-            SELECT COUNT(*)::int
-            FROM questions
-            WHERE quiz_id = q.id
-          ),
-          0
-        ) AS question_count,
-        q.created_at
-      FROM quizzes q
-      LEFT JOIN classes c ON q.class_id = c.id
-      WHERE q.teacher_id = $1
-      ORDER BY q.created_at DESC
+      (
+        SELECT
+          q.id,
+          q.title,
+          q.description,
+          q.class_id,
+          false AS is_live,
+          NULL AS session_id,
+          c.name AS class_name,
+          COALESCE(
+            (
+              SELECT COUNT(*)::int
+              FROM questions
+              WHERE quiz_id = q.id
+            ),
+            0
+          ) AS question_count,
+          q.created_at
+        FROM quizzes q
+        LEFT JOIN classes c ON q.class_id = c.id
+        WHERE q.teacher_id = $1
+          AND COALESCE(q.is_live, false) = false
+      )
+      UNION ALL
+      (
+        SELECT
+          MIN(q.id) AS id,
+          CONCAT(c.name, ' Live Session') AS title,
+          'Live quiz session' AS description,
+          q.class_id,
+          true AS is_live,
+          q.session_id,
+          c.name AS class_name,
+          COUNT(*)::int AS question_count,
+          MIN(q.created_at) AS created_at
+        FROM quizzes q
+        LEFT JOIN classes c ON q.class_id = c.id
+        WHERE q.teacher_id = $1
+          AND COALESCE(q.is_live, false) = true
+          AND q.session_id IS NOT NULL
+        GROUP BY q.session_id, q.class_id, c.name
+      )
+      ORDER BY created_at DESC
       `,
       [teacher_id]
     );
