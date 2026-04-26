@@ -4,7 +4,13 @@ import { Bell, Search, ChevronDown, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
-export default function Topbar({ userName = "Teacher" }: { userName?: string }) {
+interface TopbarProps {
+  title?: string;
+  userName?: string;
+  role?: string;
+}
+
+export default function Topbar({ title, userName = "User", role = "Teacher" }: TopbarProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -16,9 +22,20 @@ export default function Topbar({ userName = "Teacher" }: { userName?: string }) 
     "/dashboard/teacher/quizzes": "Quiz Management",
     "/dashboard/teacher/live": "Live Class",
     "/dashboard/teacher/settings": "Settings",
+    "/dashboard/admin": "Dashboard",
+    "/dashboard/admin/users": "Users",
+    "/dashboard/admin/classes": "Classes",
+    "/dashboard/admin/analytics": "System Analytics",
+    "/dashboard/admin/settings": "Settings",
+    "/dashboard/student": "Dashboard",
+    "/dashboard/student/classes": "Classes",
+    "/dashboard/student/quizzes": "Quizzes",
+    "/dashboard/student/attendance": "Attendance",
+    "/dashboard/student/live": "Live Class",
+    "/dashboard/student/settings": "Settings",
   };
 
-  const title = titleMap[pathname] || "Dashboard";
+  const finalTitle = title || titleMap[pathname] || "Dashboard";
 
   const logout = () => {
     localStorage.clear();
@@ -28,8 +45,8 @@ export default function Topbar({ userName = "Teacher" }: { userName?: string }) 
   return (
     <header className="fixed top-0 left-64 right-0 h-16 bg-white/90 backdrop-blur border-b border-slate-200 z-40 px-6 flex items-center justify-between">
       <div>
-        <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
-        <p className="text-xs text-slate-500">Manage your learning workspace</p>
+        <h1 className="text-xl font-semibold text-slate-900">{finalTitle}</h1>
+        <p className="text-xs text-slate-500">{role} Workspace</p>
       </div>
 
       <div className="flex items-center gap-4">
