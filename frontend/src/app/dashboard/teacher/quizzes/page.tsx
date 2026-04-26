@@ -14,12 +14,15 @@ interface Quiz {
   class_name?: string;
   question_count: number;
   created_at: string;
+  is_live?: boolean;
+  session_id?: string | null;
 }
 
 export default function TeacherQuizzesPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [tab, setTab] = useState<"all" | "bank" | "live">("all");
 
   useEffect(() => {
     fetchQuizzes();
@@ -60,10 +63,20 @@ export default function TeacherQuizzesPage() {
     }
   };
 
-  const filteredQuizzes = quizzes.filter((quiz) =>
-    quiz.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredQuizzes = quizzes
+    .filter((quiz) => {
+      if (tab === "bank") return !quiz.is_live;
+      if (tab === "live") return quiz.is_live;
+      return true;
+    })
+    .filter((quiz) =>
+      `${quiz.title} ${quiz.class_name || ""}`
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+    );
 
+  const bankCount = quizzes.filter((q) => !q.is_live).length;
+  const liveCount = quizzes.filter((q) => q.is_live).length;
   const totalQuestions = quizzes.reduce(
     (sum, q) => sum + Number(q.question_count || 0),
     0
@@ -94,10 +107,14 @@ export default function TeacherQuizzesPage() {
           </div>
 
           {/* Stats Row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-              <p className="text-sm text-slate-500">Total Quizzes</p>
-              <p className="text-3xl font-semibold mt-2 text-slate-900">{quizzes.length}</p>
+              <p className="text-sm text-slate-500">Quiz Bank</p>
+              <p className="text-3xl font-semibold mt-2 text-slate-900">{bankCount}</p>
+            </div>
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+              <p className="text-sm text-slate-500">Live Quizzes</p>
+              <p className="text-3xl font-semibold mt-2 text-slate-900">{liveCount}</p>
             </div>
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
               <p className="text-sm text-slate-500">Questions</p>
@@ -109,11 +126,28 @@ export default function TeacherQuizzesPage() {
             </div>
           </div>
 
+          {/* Tabs */}
+          <div className="flex gap-2">
+            {["all", "bank", "live"].map((item) => (
+              <button
+                key={item}
+                onClick={() => setTab(item as "all" | "bank" | "live")}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                  tab === item
+                    ? "bg-blue-600 text-white shadow-md"
+                    : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
+                }`}
+              >
+                {item === "all" ? "All" : item === "bank" ? "Quiz Bank" : "Live Quizzes"}
+              </button>
+            ))}
+          </div>
+
           {/* Search Bar */}
           <div className="flex gap-4">
             <input
               type="text"
-              placeholder="Search quizzes..."
+              placeholder="Search by title or class..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -158,6 +192,15 @@ export default function TeacherQuizzesPage() {
 
                   {/* Badges */}
                   <div className="flex gap-2 mb-4">
+                    <span
+                      className={`inline-block px-3 py-1 text-xs font-medium rounded-full ${
+                        quiz.is_live
+                          ? "bg-purple-100 text-purple-700"
+                          : "bg-green-100 text-green-700"
+                      }`}
+                    >
+                      {quiz.is_live ? "Live Quiz" : "Quiz Bank"}
+                    </span>
                     {quiz.class_name && (
                       <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
                         {quiz.class_name}
@@ -189,12 +232,14 @@ export default function TeacherQuizzesPage() {
                       <Eye size={16} />
                       Results
                     </Link>
-                    <button
-                      onClick={() => deleteQuiz(quiz.id)}
-                      className="px-3 py-2 text-slate-600 hover:bg-red-50 rounded-xl transition"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {!quiz.is_live && (
+                      <button
+                        onClick={() => deleteQuiz(quiz.id)}
+                        className="px-3 py-2 text-slate-600 hover:bg-red-50 rounded-xl transition"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
