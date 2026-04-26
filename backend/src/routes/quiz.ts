@@ -20,7 +20,7 @@ router.post("/", createQuiz);
 router.post("/question", addQuestion);
 router.post("/submit", submitQuiz);
 router.post("/assign", assignQuiz);
-router.get("/teacher/:teacher_id", getTeacherQuizzes);
+router.get("/teacher", getTeacherQuizzes);
 router.get("/class/:class_id", getClassQuizzes);
 router.get("/questions/:quiz_id", getQuizQuestions);
 router.get("/results/:quiz_id", getQuizResults);

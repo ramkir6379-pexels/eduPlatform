@@ -32,7 +32,7 @@ export default function TeacherQuizzesPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      setQuizzes(data);
+      setQuizzes(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching quizzes:", error);
     } finally {

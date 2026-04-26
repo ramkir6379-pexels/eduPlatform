@@ -221,7 +221,20 @@ export const assignQuiz = async (req: Request, res: Response) => {
 /* Get Teacher Quizzes */
 export const getTeacherQuizzes = async (req: Request, res: Response) => {
   try {
-    const { teacher_id } = req.params;
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    const decoded: any = jwt.verify(
+      token,
+      process.env.JWT_SECRET as string
+    );
+
+    const teacher_id = decoded.id;
 
     const result = await pool.query(
       `SELECT q.id, q.title, q.description, c.name as class_name, 
