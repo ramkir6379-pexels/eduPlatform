@@ -2,12 +2,11 @@
 
 import {
   LayoutDashboard,
-  Users,
-  Video,
-  ClipboardCheck,
   BookOpen,
-  BarChart3,
+  ClipboardCheck,
+  Video,
   Settings,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -15,70 +14,48 @@ import { usePathname } from "next/navigation";
 export default function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
 
-  const getMenuItems = () => {
-    const baseItems = [
-      { label: "Dashboard", icon: LayoutDashboard, href: `/dashboard/${role}` },
-    ];
-
-    if (role === "admin") {
-      return [
-        ...baseItems,
-        { label: "Users", icon: Users, href: "/dashboard/admin/users" },
-        { label: "Classes", icon: BookOpen, href: "/dashboard/admin/classes" },
-        { label: "Analytics", icon: BarChart3, href: "/dashboard/admin/analytics" },
-        { label: "Settings", icon: Settings, href: "/dashboard/admin/settings" },
-      ];
-    }
-
-    if (role === "teacher") {
-      return [
-        ...baseItems,
-        { label: "Classes", icon: BookOpen, href: `/dashboard/${role}/classes` },
-        { label: "Attendance", icon: ClipboardCheck, href: `/dashboard/${role}/attendance` },
-        { label: "Quizzes", icon: BookOpen, href: `/dashboard/${role}/quizzes` },
-        { label: "Live Class", icon: Video, href: `/dashboard/${role}/live` },
-        { label: "Settings", icon: Settings, href: `/dashboard/${role}/settings` },
-      ];
-    }
-
-    // Student
-    return [
-      ...baseItems,
-      { label: "Classes", icon: BookOpen, href: `/dashboard/${role}/classes` },
-      { label: "Quizzes", icon: BookOpen, href: `/dashboard/${role}/quizzes` },
-      { label: "Attendance", icon: ClipboardCheck, href: `/dashboard/${role}/attendance` },
-      { label: "Live Class", icon: Video, href: `/dashboard/${role}/live` },
-      { label: "Settings", icon: Settings, href: `/dashboard/${role}/settings` },
-    ];
-  };
-
-  const menuItems = getMenuItems();
+  const items = [
+    { label: "Dashboard", href: `/dashboard/${role}`, icon: LayoutDashboard },
+    { label: "Classes", href: `/dashboard/${role}/classes`, icon: BookOpen },
+    {
+      label: "Attendance",
+      href: `/dashboard/${role}/attendance`,
+      icon: ClipboardCheck,
+    },
+    { label: "Quizzes", href: `/dashboard/${role}/quizzes`, icon: FileText },
+    { label: "Live Class", href: `/dashboard/${role}/live`, icon: Video },
+    { label: "Settings", href: `/dashboard/${role}/settings`, icon: Settings },
+  ];
 
   return (
-    <div className="w-64 bg-gray-900 text-white h-screen p-6 fixed">
-      <h1 className="text-2xl font-bold mb-8 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-        EduPlatform
-      </h1>
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-slate-950 text-white border-r border-slate-800 px-5 py-6">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+          EduPlatform
+        </h1>
+        <p className="text-xs text-slate-400 mt-1">Teacher Workspace</p>
+      </div>
 
       <nav className="space-y-2">
-        {menuItems.map((item) => {
-          const isActive = pathname === item.href;
+        {items.map((item) => {
+          const ActiveIcon = item.icon;
+          const active = pathname === item.href;
           return (
             <Link
               key={item.label}
               href={item.href}
-              className={`flex items-center gap-3 p-3 rounded-lg transition ${
-                isActive
+              className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition ${
+                active
                   ? "bg-blue-600 text-white shadow-lg"
-                  : "hover:bg-gray-800 text-gray-300"
+                  : "text-slate-300 hover:bg-slate-900 hover:text-white"
               }`}
             >
-              <item.icon size={20} />
-              <span>{item.label}</span>
+              <ActiveIcon size={18} />
+              <span className="text-sm font-medium">{item.label}</span>
             </Link>
           );
         })}
       </nav>
-    </div>
+    </aside>
   );
 }

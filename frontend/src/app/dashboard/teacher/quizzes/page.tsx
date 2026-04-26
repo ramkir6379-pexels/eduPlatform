@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/dashboard/Sidebar";
 import Topbar from "@/components/dashboard/Topbar";
-import { Plus, Trash2, Eye } from "lucide-react";
+import { Plus, Trash2, Eye, MoreVertical } from "lucide-react";
 import Link from "next/link";
 import { API_URL } from "@/config";
 
@@ -19,6 +19,7 @@ interface Quiz {
 export default function TeacherQuizzesPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchQuizzes();
@@ -26,7 +27,10 @@ export default function TeacherQuizzesPage() {
 
   const fetchQuizzes = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/quizzes/teacher/2`);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/api/quizzes/teacher`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json();
       setQuizzes(data);
     } catch (error) {
@@ -40,8 +44,10 @@ export default function TeacherQuizzesPage() {
     if (!confirm("Are you sure you want to delete this quiz?")) return;
 
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/api/quizzes/${quizId}`, {
         method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.ok) {
@@ -54,78 +60,137 @@ export default function TeacherQuizzesPage() {
     }
   };
 
+  const filteredQuizzes = quizzes.filter((quiz) =>
+    quiz.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalQuestions = quizzes.reduce((sum, q) => sum + q.question_count, 0);
+  const uniqueClasses = new Set(quizzes.map((q) => q.class_name)).size;
+
   return (
     <div className="flex">
       <Sidebar role="teacher" />
 
-      <div className="ml-64 w-full">
-        <Topbar title="Quiz Management" userName="Teacher" role="teacher" />
+      <div className="ml-64 pt-16 min-h-screen bg-slate-50 w-full">
+        <Topbar userName="Teacher" />
 
-        <div className="p-8 bg-gray-50 min-h-screen">
-          {/* Create Quiz Button */}
-          <div className="mb-8">
+        <div className="p-8 space-y-8">
+          {/* Header Section */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold text-slate-900">Your Quizzes</h2>
+              <p className="text-sm text-slate-500">Create, manage and review quiz performance.</p>
+            </div>
             <Link
               href="/dashboard/teacher/quizzes/create"
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-medium"
+              className="px-5 py-3 bg-blue-600 text-white rounded-2xl font-medium hover:bg-blue-700 transition flex items-center gap-2"
             >
-              <Plus size={20} /> Create New Quiz
+              <Plus size={18} />
+              Create Quiz
             </Link>
           </div>
 
-          {/* Quizzes List */}
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Quizzes</h2>
+          {/* Stats Row */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+              <p className="text-sm text-slate-500">Total Quizzes</p>
+              <p className="text-3xl font-semibold mt-2 text-slate-900">{quizzes.length}</p>
+            </div>
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+              <p className="text-sm text-slate-500">Questions</p>
+              <p className="text-3xl font-semibold mt-2 text-slate-900">{totalQuestions}</p>
+            </div>
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+              <p className="text-sm text-slate-500">Active Classes</p>
+              <p className="text-3xl font-semibold mt-2 text-slate-900">{uniqueClasses}</p>
+            </div>
+          </div>
 
+          {/* Search Bar */}
+          <div className="flex gap-4">
+            <input
+              type="text"
+              placeholder="Search quizzes..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Quizzes Grid */}
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600 font-medium">Loading quizzes...</p>
+                <p className="text-slate-600 font-medium">Loading quizzes...</p>
               </div>
             </div>
-          ) : quizzes.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-md p-12 text-center">
-              <p className="text-gray-600 text-lg mb-4">📝 No quizzes created yet.</p>
-              <p className="text-gray-500 mb-6">Create your first quiz to get started.</p>
-              <Link
-                href="/dashboard/teacher/quizzes/create"
-                className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-medium"
-              >
-                <Plus size={20} /> Create Quiz
-              </Link>
+          ) : filteredQuizzes.length === 0 ? (
+            <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
+              <p className="text-slate-600 text-lg mb-4">📝 No quizzes found.</p>
+              <p className="text-slate-500 mb-6">
+                {searchTerm ? "Try adjusting your search." : "Create your first quiz to get started."}
+              </p>
+              {!searchTerm && (
+                <Link
+                  href="/dashboard/teacher/quizzes/create"
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700 transition font-medium"
+                >
+                  <Plus size={18} />
+                  Create Quiz
+                </Link>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {quizzes.map((quiz) => (
-                <div key={quiz.id} className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition">
-                  <h3 className="text-lg font-bold text-gray-800 mb-2">{quiz.title}</h3>
-                  {quiz.description && (
-                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">{quiz.description}</p>
-                  )}
+              {filteredQuizzes.map((quiz) => (
+                <div
+                  key={quiz.id}
+                  className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition"
+                >
+                  {/* Title */}
+                  <h3 className="text-lg font-semibold text-slate-900 mb-3 line-clamp-2">
+                    {quiz.title}
+                  </h3>
 
-                  <div className="mb-4 text-sm text-gray-600 space-y-1">
-                    <p>Questions: {quiz.question_count}</p>
-                    {quiz.class_name && <p>Class: {quiz.class_name}</p>}
-                    <p>Created: {new Date(quiz.created_at).toLocaleDateString()}</p>
+                  {/* Badges */}
+                  <div className="flex gap-2 mb-4">
+                    {quiz.class_name && (
+                      <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                        {quiz.class_name}
+                      </span>
+                    )}
+                    <span className="inline-block px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-full">
+                      {quiz.question_count} questions
+                    </span>
                   </div>
 
+                  {/* Date */}
+                  <p className="text-xs text-slate-500 mb-4">
+                    Created {new Date(quiz.created_at).toLocaleDateString()}
+                  </p>
+
+                  {/* Actions */}
                   <div className="flex gap-2">
                     <Link
                       href={`/dashboard/teacher/quizzes/${quiz.id}`}
-                      className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                      className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-xl hover:bg-blue-700 transition text-sm font-medium"
                     >
-                      <Eye size={16} /> View
+                      <Eye size={16} />
+                      View
                     </Link>
                     <Link
                       href={`/dashboard/teacher/quizzes/${quiz.id}/results`}
-                      className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition text-sm font-medium"
+                      className="flex-1 flex items-center justify-center gap-2 bg-slate-100 text-slate-700 px-3 py-2 rounded-xl hover:bg-slate-200 transition text-sm font-medium"
                     >
-                      <Eye size={16} /> Results
+                      <Eye size={16} />
+                      Results
                     </Link>
                     <button
                       onClick={() => deleteQuiz(quiz.id)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition text-sm font-medium"
+                      className="px-3 py-2 text-slate-600 hover:bg-red-50 rounded-xl transition"
                     >
-                      <Trash2 size={16} /> Delete
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
