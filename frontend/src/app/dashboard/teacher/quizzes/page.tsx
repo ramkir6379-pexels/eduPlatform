@@ -64,7 +64,10 @@ export default function TeacherQuizzesPage() {
     quiz.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalQuestions = quizzes.reduce((sum, q) => sum + q.question_count, 0);
+  const totalQuestions = quizzes.reduce(
+    (sum, q) => sum + Number(q.question_count || 0),
+    0
+  );
   const uniqueClasses = new Set(quizzes.map((q) => q.class_name)).size;
 
   return (

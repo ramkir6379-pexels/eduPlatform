@@ -238,20 +238,42 @@ export const getTeacherQuizzes = async (req: Request, res: Response) => {
     const teacher_id = decoded.id;
 
     const result = await pool.query(
-      `SELECT q.id, q.title, q.description, c.name as class_name, 
-              (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as question_count,
-              q.created_at
-       FROM quizzes q
-       LEFT JOIN classes c ON q.class_id = c.id
-       WHERE q.teacher_id = $1
-       ORDER BY q.created_at DESC`,
+      `
+      SELECT
+        q.id,
+        q.title,
+        q.description,
+        q.class_id,
+        c.name AS class_name,
+        COALESCE(
+          (SELECT COUNT(*)::int
+            FROM questions
+            WHERE quiz_id = q.id),
+          0
+        ) AS question_count,
+        q.created_at
+      FROM quizzes q
+      LEFT JOIN classes c ON q.class_id = c.id
+      WHERE q.teacher_id = $1
+        AND COALESCE(q.is_live, false) = false
+      ORDER BY q.created_at DESC
+      `,
       [teacher_id]
     );
 
     res.json(result.rows);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching teacher quizzes:", error);
-    res.status(500).json({ error: "Failed to fetch quizzes" });
+
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ error: "Token expired" });
+    }
+
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    return res.status(500).json({ error: "Failed to fetch quizzes" });
   }
 };
 
