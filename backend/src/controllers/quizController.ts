@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { pool } from "../db";
+import jwt from "jsonwebtoken";
 
 /* Create Quiz */
 export const createQuiz = async (req: Request, res: Response) => {
