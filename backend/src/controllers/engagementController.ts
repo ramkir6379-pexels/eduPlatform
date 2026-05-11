@@ -31,7 +31,7 @@ export const receiveFrame = async (req: Request, res: Response) => {
     });
 
     const response = await axios.post(
-      "https://dominative-fishily-nguyet.ngrok-free.dev/analyze",
+      "http://3.110.120.13:8000/analyze",
       formData,
       {
         headers: formData.getHeaders(),
