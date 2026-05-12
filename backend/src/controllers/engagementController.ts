@@ -31,7 +31,7 @@ export const receiveFrame = async (req: Request, res: Response) => {
     });
 
     const response = await axios.post(
-      "http://3.110.120.13:8000/analyze",
+      "http://15.206.72.242:8000/analyze",
       formData,
       {
         headers: formData.getHeaders(),
